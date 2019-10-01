@@ -1,0 +1,13 @@
+name: CrowdWaterDashboard
+title: CrowdWaterDashboard
+username:
+account: crowdwater
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1072969
+bundleId: 2458683
+url: https://crowdwater.shinyapps.io/CrowdWaterDashboard/
+when: 1569931049.23262
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: LICENSE|README.md
