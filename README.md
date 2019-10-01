@@ -6,4 +6,4 @@ Last Update: 01.10.2019
 
 This is my first GitHub repository about the CrowdWater Dashboard. I made this to not be asked by my supervisors about current stats of the project all the time. They can just have a look at the dashboard by themselves. Prolem: solved.
 
-I now connected the project to my RStudio.
+01.10.2019 11:52: I now connected the project to my RStudio.
