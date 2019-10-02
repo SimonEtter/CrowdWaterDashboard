@@ -132,7 +132,7 @@ ui <- dashboardPage(
                             img(src='Logo_Crowdwater_pos.png', width = "50%"),
                             HTML('<br><br>This Dashboard was created for the <a href="www.crowdwater.ch">CrowdWater</a> project in RStudio and runs on <a href="www.shinyapps.io">Shinyapps.io</a> <br>'),
                             HTML('The CrowdWater project was funded by the Swiss National Science Fund. <br>'),
-                            HTML('For the fullscreen version click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/">here</a>. <br>'),
+                            HTML('For the fullscreen version click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/"target="_blank">here</a>. <br>'),
                             HTML('&#169; Simon Etter, code can be found on my <a href="https://github.com/SimonEtter/CrowdWaterDashboard">GitHub</a>.')
                             
                             )
