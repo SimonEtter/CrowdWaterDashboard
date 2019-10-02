@@ -129,12 +129,12 @@ ui <- dashboardPage(
                   ),
                   tabItem(tabName = "about",
                           fluidPage(
-                            img(src='Logo_Crowdwater_pos.png', width = "50%"),
+                            img(src='Logo_Crowdwater_pos.png', width = "240px"),
                             HTML('<br><br>This Dashboard was created for the <a href="www.crowdwater.ch">CrowdWater</a> project at the <a href="www.geo.uzh.ch">Department of Geography</a> of the <a href="www.uzh.ch">University of Zurich</a> in <a href="www.cran.org">R</a> and <a href="https://rstudio.com/">RStudio</a> and runs on <a href="www.shinyapps.io">Shinyapps.io</a> <br>'),
                             HTML('The CrowdWater project was funded by the <a href="http://www.snf.ch">Swiss National Science Foundation</a> <br>'),
                             HTML('Click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/"target="_blank">here</a> for the fullscreen version. <br>'),
                             HTML('&#169; Simon Etter, the code can be found on my <a href="https://github.com/SimonEtter/CrowdWaterDashboard"target="_blank">GitHub</a> account.<br><br><br>'),
-                            img(src='uzh_logo_e_pos.png', width = "30%"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "30%")
+                            img(src='uzh_logo_e_pos.png', width = "200px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px")
                             )
                           )
                 )
