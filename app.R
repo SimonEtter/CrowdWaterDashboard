@@ -134,7 +134,7 @@ ui <- dashboardPage(
                             HTML('The CrowdWater project was funded by the <a href="http://www.snf.ch">Swiss National Science Foundation</a> <br>'),
                             HTML('Click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/"target="_blank">here</a> for the fullscreen version. <br>'),
                             HTML('&#169; Simon Etter, the code can be found on my <a href="https://github.com/SimonEtter/CrowdWaterDashboard"target="_blank">GitHub</a> account.<br><br><br>'),
-                            img(src='uzh_logo_e_pos.png', width = "200px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px")
+                            img(src='uzh_logo_e_pos.png', width = "201px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px")
                             )
                           )
                 )
