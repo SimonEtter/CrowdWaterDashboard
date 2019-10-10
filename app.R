@@ -178,7 +178,7 @@ server <- function(input, output,session) {
   uq.roots = unique(CWdata$root_id)
   uq.users = unique(CWdata$spotted_by)
   # the start date is approximately when the app was officially launched, there are some pics from earlier dates that were added manually by us
-  dateSeries = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.dates)+3600*24,by='1 day')
+  dateSeries = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.dates)+3600,by='1 day')
   attr(dateSeries,"tzone") = 'GMT'
 
   
@@ -200,7 +200,7 @@ server <- function(input, output,session) {
   maxcontribsTS = max(sapply(IdsPerRootTS, function(x) length(x)))
   maxcontribUserTS = max(sapply(IdsPerUserTS, function(x) length(x)))
   uq.datesTS = unique(CWdataTS$created_at)
-  dateSeriesTS = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesTS)+3600*24,by='1 day')
+  dateSeriesTS = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesTS)+3600,by='1 day')
   cumSumsTS = sapply(dateSeriesTS,function(x) length(CWdataTS$Spot_ID[CWdataTS$created_at<=x]))
   cumSumsUsersTS = sapply(dateSeriesTS,function(x) length(unique(CWdataTS$spotted_by[CWdataTS$created_at<=x])))
   
@@ -211,7 +211,7 @@ server <- function(input, output,session) {
   maxcontribsSM = max(sapply(IdsPerRootSM, function(x) length(x)))
   maxcontribUserSM = max(sapply(IdsPerUserSM, function(x) length(x)))
   uq.datesSM = unique(CWdataSM$created_at)
-  dateSeriesSM = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesSM)+3600*24,by='1 day')
+  dateSeriesSM = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesSM)+3600,by='1 day')
   cumSumsSM = sapply(dateSeriesSM,function(x) length(CWdataSM$Spot_ID[CWdataSM$created_at<=x]))
   cumSumsUsersSM = sapply(dateSeriesSM,function(x) length(unique(CWdataSM$spotted_by[CWdataSM$created_at<=x])))
   
@@ -222,7 +222,7 @@ server <- function(input, output,session) {
   maxcontribsPP = max(sapply(IdsPerRootPP, function(x) length(x)))
   maxcontribUserPP = max(sapply(IdsPerUserPP, function(x) length(x)))
   uq.datesPP = unique(CWdataPP$created_at)
-  dateSeriesPP = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesPP)+3600*24,by='1 day')
+  dateSeriesPP = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesPP)+3600,by='1 day')
   cumSumsPP = sapply(dateSeriesPP,function(x) length(CWdataPP$Spot_ID[CWdataPP$created_at<=x]))
   cumSumsUsersPP = sapply(dateSeriesPP,function(x) length(unique(CWdataPP$spotted_by[CWdataPP$created_at<=x])))
   
@@ -233,7 +233,7 @@ server <- function(input, output,session) {
   maxcontribsWL = max(sapply(IdsPerRootWL, function(x) length(x)))
   maxcontribUserWL = max(sapply(IdsPerUserWL, function(x) length(x)))
   uq.datesWL = unique(CWdataWL$created_at)
-  dateSeriesWL = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesWL)+3600*24,by='1 day')
+  dateSeriesWL = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesWL)+3600,by='1 day')
   cumSumsWL = sapply(dateSeriesWL,function(x) length(CWdataWL$Spot_ID[CWdataWL$created_at<=x]))
   cumSumsUsersWL = sapply(dateSeriesWL,function(x) length(unique(CWdataWL$spotted_by[CWdataWL$created_at<=x])))
 
