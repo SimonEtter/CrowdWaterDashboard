@@ -357,7 +357,7 @@ server <- function(input, output,session) {
   output$uqRootsSpots <- renderValueBox({
     valueBox(      
       formatC(length(uq.roots), format="d", big.mark=','),
-      paste('# Root-Spots'),
+      paste('Number of individual spots'),
       icon = icon("signal",lib='font-awesome'),
       color = "light-blue")    })
   
