@@ -7,6 +7,7 @@ library(shinyjs)
 library(rdrop2)
 library(V8)
 # setwd('G:/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard/')
+# setwd('G:/group/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard')
 source('./CW_API_Download.R')
 # icons: http://rstudio.github.io/shinydashboard/appearance.html
 # the javascript code to refresh the entire page.
@@ -29,6 +30,7 @@ ui <- dashboardPage(
   dashboardBody(shinyjs::useShinyjs(),
                 extendShinyjs(text = jscode),# the javascript code to refresh the entire page.
                 tags$head(tags$style(HTML(".small-box {height: 110px}"))),
+                # includeCSS("www/bootstrap4CWDashboard.css"),
                 # # add custom JS code to disable the header, however then the switching between sidebartabs is also disabled...
                 # shinyjs::extendShinyjs(text = "shinyjs.hidehead = function(parm){
                 #                     $('header').css('display', parm);
@@ -75,11 +77,11 @@ ui <- dashboardPage(
                                    valueBoxOutput(width = 3,"UsersWithXPPcontribs"))
                   ),
                   tabItem(tabName="sb_plots",
-                            fluidRow(
-                              box(width = 12,    
-                                  title = "Cumulative CrowdWater Contributions",    
-                                  plotOutput("cumsumplot", height = "500px") %>% withSpinner(color='#7dbdeb'))
-                            ),
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Cumulative CrowdWater Contributions",    
+                                plotOutput("cumsumplot", height = "500px") %>% withSpinner(color='#7dbdeb'))
+                          ),
                           fluidRow(
                             box(width = 12,    
                                 title = "Cumulative Water Level Contributions",    
@@ -128,11 +130,17 @@ ui <- dashboardPage(
                                 plotOutput("cumsumplotUsersPP", height = "500px"))
                           )
                   ),
-                  tabItem(tabName = "sb_explore",
+                  tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
-                            textInput("stationID", "Enter the ID of the Spot you want to explore", "")
-                          )
-                  ),
+                            textInput("stationID", "Enter the ID of the Spot you want to explore", "158599"),
+                            textOutput("expl_statRootID"),
+                            htmlOutput("expl_rootImg"),
+                            htmlOutput("expl_latestImg"),
+                            fluidRow(box(width = 12,    
+                                title = "Timeline of contributions",    
+                                plotOutput("expl_timelinePlot", height = "500px")
+                          ))
+                  )),
                   tabItem(tabName = "about",
                           fluidPage(
                             img(src='Logo_Crowdwater_pos.png', width = "240px"),
@@ -141,8 +149,8 @@ ui <- dashboardPage(
                             HTML('Click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/"target="_blank">here</a> for the fullscreen version. <br>'),
                             HTML('&#169; Simon Etter, the code can be found on my <a href="https://github.com/SimonEtter/CrowdWaterDashboard"target="_blank">GitHub</a> account.<br><br><br>'),
                             img(src='uzh_logo_e_pos.png', width = "200px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px")
-                            )
                           )
+                  )
                 )
   )
 )
@@ -151,14 +159,14 @@ ui <- dashboardPage(
 # Define server logic ----
 server <- function(input, output,session) {
   # js$hidehead('none')    # would be to hide the header, but that also disables the sidebar controls, therefore not used
-
+  
   locFile4Attempt = 'CW_Data.csv'
   observeEvent(input$reloadAllCWdata,{
     CWdataFull = Download_AllCWdata_from_API()
     colnames(CWdataFull)[1]='Spot_ID'
     write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
     js$refresh()
-    })
+  })
   
   
   if(file.exists(paste0("CWdata/",locFile4Attempt))){
@@ -186,7 +194,7 @@ server <- function(input, output,session) {
   # the start date is approximately when the app was officially launched, there are some pics from earlier dates that were added manually by us
   dateSeries = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.dates)+3600,by='1 day')
   attr(dateSeries,"tzone") = 'GMT'
-
+  
   
   # cumsums at dates and Root IDs with corresponding updates
   cumSums = sapply(dateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
@@ -194,7 +202,7 @@ server <- function(input, output,session) {
   
   IdsPerRoot = sapply(uq.roots,function(x) CWdata$Spot_ID[CWdata$root_id==x])
   IdsPerUser = sapply(uq.users,function(x) CWdata$Spot_ID[CWdata$spotted_by==x])
-    
+  
   # for the slider further below 
   maxcontribs = max(sapply(IdsPerRoot, function(x) length(x)))
   maxcontribUser = max(sapply(IdsPerUser, function(x) length(x)))
@@ -242,7 +250,7 @@ server <- function(input, output,session) {
   dateSeriesWL = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesWL)+3600,by='1 day')
   cumSumsWL = sapply(dateSeriesWL,function(x) length(CWdataWL$Spot_ID[CWdataWL$created_at<=x]))
   cumSumsUsersWL = sapply(dateSeriesWL,function(x) length(unique(CWdataWL$spotted_by[CWdataWL$created_at<=x])))
-
+  
   # Plots with contributions ----
   cumPlot = cumplot(dateSeries, cumSums)
   output$cumsumplot = renderPlot({cumPlot})
@@ -274,7 +282,7 @@ server <- function(input, output,session) {
   
   cumPlotUsersPP = cumplot(dateSeriesPP, cumSumsUsersPP)
   output$cumsumplotUsersPP = renderPlot({cumPlotUsersPP})
-
+  
   # Value Boxes ----
   output$TotnContribs <- renderValueBox({
     valueBox(      
@@ -310,7 +318,7 @@ server <- function(input, output,session) {
       "Number of Water Level Spots",
       icon=icon("tint-slash",lib='font-awesome'),
       color = "olive")
-    })
+  })
   
   output$nSMRootSpots <- renderValueBox({
     valueBox(
@@ -446,7 +454,7 @@ server <- function(input, output,session) {
       color='teal')
   })
   
-  # Plastic Pollution Stations with more than X (slider) contributions
+  # Plastic Pollution Stations with more than X (slider) contributions----
   output$PPStationsWithXContribs = renderValueBox({
     NrStatsWithMorethanXContribs=sum(unlist(lapply(IdsPerRootPP, function(x) length(x)>=input$XnrPPContribs)))
     valueBox(
@@ -456,7 +464,7 @@ server <- function(input, output,session) {
       color='teal')
   })
   
-  # Water level Stations with more than X (slider) contributions
+  # Water level Stations with more than X (slider) contributions ----
   output$WLStationsWithXContribs = renderValueBox({
     NrStatsWithMorethanXContribs=sum(unlist(lapply(IdsPerRootWL, function(x) length(x)>=input$XnrWLContribs)))
     valueBox(
@@ -464,6 +472,64 @@ server <- function(input, output,session) {
       subtitle=paste0('Water Level Stations with \u2265 ',input$XnrWLContribs,' contributions'),
       icon = icon("signal",lib='font-awesome'),
       color='teal')
+  })
+  
+  # Explore contributions of stations with input id ----
+  observeEvent(input$stationID,{
+    expl_rootId = uq.roots[unlist(lapply(IdsPerRoot,function(x) input$stationID %in% x))]
+    # extract spot data
+    expl_spotData = CWdata[CWdata$root_id==expl_rootId,]
+    # define type of observation (WL, SM, PP , TS)
+    expl_osType = unique(expl_spotData$topic_id)[1] # to avoid errors if there are multiple categories in the vector (which should not be possible)
+    
+    # create the text output
+    output$expl_statRootID <- renderText({paste0("The root spot id is: ",expl_rootId) })
+    
+    # download root image and latest update
+    output$expl_rootImg <-
+      renderText({
+        c(
+          '<img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==expl_rootId],'.jpg alt="root image" width="25%;"'),
+          '/>'
+        )
+      })
+    output$expl_latestImg <-
+      renderText({
+        c('<div class="container"><img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="root image" width="25%;"'),
+          '/><div class="bottom-right">',as.character(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID]),'</div>'
+        )
+      })
+    
+    
+    # make chart of timeseries
+    # water level	= 470 fld_05_00000066
+    # soil moisture = 469 fld_05_00000052
+    # temporary stream =	468 fld_05_00000051
+    # plastic pollution =	1919 fld_05_00000286 (nr. of pieces)
+    output$expl_timelinePlot <- renderPlot({
+    expl_plt = ggplot(data=expl_spotData,aes(x=as.Date(created_at)))+
+      scale_x_date(date_labels = "%B %Y")
+    if(expl_spotData$category==470){
+      expl_plt = expl_plt + 
+        geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel))+
+        geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel))+
+        xlab('')+ylab('Water level class')+
+        theme_minimal()
+    }else if (expl_spotData$category==469){
+      expl_plt = expl_plt + geom_hist(aes(y=expl_spotData$SoilMoisture))
+    }else if (expl_spotData$category==468){
+      expl_plt = expl_plt + geom_point(aes(y=expl_spotData$TempStream))
+    }else if (expl_spotData$category==1919){
+      expl_plt = expl_plt + geom_point(aes(y=expl_spotData$PlasticPieces))
+    }
+    expl_plt = expl_plt + theme(
+    rect=element_blank(),
+    panel.grid = element_blank(),
+    panel.background= element_blank(),
+    plot.background = element_blank())
+    }, bg="transparent", execOnResize = TRUE)
   })
 }
 # Run the application 
