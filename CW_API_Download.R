@@ -3,9 +3,9 @@ Download_AllCWdata_from_API = function(){
   require(jsonlite)
   require(curl)
   WL_LUT = data.frame(WLID = 492:505,WLInput=-6:7)
-  SM_LUT = data.frame(SMID = 477:484,SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
-  TS_LUT = data.frame(TSID = 471:476,TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
-  PP_LUT = data.frame(PPID = 1926:1933,PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
+  SM_LUT = data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
+  TS_LUT = data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
+  PP_LUT = data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
   
   # output  path
   # outFile = 'G:/h2k-data/Projects/CrowdWater/Daten/CrowdWater/API_Exports/CrowdWater_APIData.csv'
@@ -63,10 +63,10 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   require(jsonlite)
   require(curl)
   WL_LUT = data.frame(WLID = 492:505,WLInput=-6:7)
-  SM_LUT = data.frame(SMID = 477:484,SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
-  TS_LUT = data.frame(TSID = 471:476,TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
-  PP_LUT = data.frame(PPID = 1926:1933,PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
-
+  SM_LUT = data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
+  TS_LUT = data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
+  PP_LUT = data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
+  
   lastDate = sub(' ','%20',lastDate)
   
   # String used as a basis for making the API-Queries
