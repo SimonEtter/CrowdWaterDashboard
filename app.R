@@ -131,16 +131,15 @@ ui <- dashboardPage(
                           )
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
-                          fluidPage(
-                            textInput("stationID", "Enter the ID of the Spot you want to explore", "158599"),
-                            textOutput("expl_statRootID"),
-                            htmlOutput("expl_rootImg"),
-                            htmlOutput("expl_latestImg"),
-                            fluidRow(box(width = 12,    
-                                title = "Timeline of contributions",    
-                                plotOutput("expl_timelinePlot", height = "500px")
-                          ))
-                  )),
+                          fluidRow(box(width = 6,title="Enter the ID of the Spot you want to explore",textInput("stationID", "", "158599"))),
+                          fluidRow(box(width=1,title = "Root Spot Number", textOutput("expl_statRootID"))),
+                          fluidRow(box(widht=2, title = "Root Spot Image", htmlOutput("expl_rootImg")),
+                                   box(widht=2, title = "Latest Image",htmlOutput("expl_latestImg"))),
+                          fluidRow(plotOutput("expl_timelinePlot", height = "500px")),
+                          fluidRow(box(width = 12,    
+                                       title = "Timeline of contributions",    
+                                       plotOutput("expl_timelinePlot", height = "500px")%>% withSpinner(color='#7dbdeb'))
+                          )),
                   tabItem(tabName = "about",
                           fluidPage(
                             img(src='Logo_Crowdwater_pos.png', width = "240px"),
@@ -508,28 +507,27 @@ server <- function(input, output,session) {
     # soil moisture = 469 fld_05_00000052
     # temporary stream =	468 fld_05_00000051
     # plastic pollution =	1919 fld_05_00000286 (nr. of pieces)
-    output$expl_timelinePlot <- renderPlot({
     expl_plt = ggplot(data=expl_spotData,aes(x=as.Date(created_at)))+
       scale_x_date(date_labels = "%B %Y")
-    if(expl_spotData$category==470){
+    if(expl_spotData$category[1]==470){
       expl_plt = expl_plt + 
         geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel))+
         geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel))+
         xlab('')+ylab('Water level class')+
         theme_minimal()
-    }else if (expl_spotData$category==469){
+    }else if (expl_spotData$category[1]==469){
       expl_plt = expl_plt + geom_hist(aes(y=expl_spotData$SoilMoisture))
-    }else if (expl_spotData$category==468){
+    }else if (expl_spotData$category[1]==468){
       expl_plt = expl_plt + geom_point(aes(y=expl_spotData$TempStream))
-    }else if (expl_spotData$category==1919){
+    }else if (expl_spotData$category[1]==1919){
       expl_plt = expl_plt + geom_point(aes(y=expl_spotData$PlasticPieces))
     }
     expl_plt = expl_plt + theme(
-    rect=element_blank(),
-    panel.grid = element_blank(),
-    panel.background= element_blank(),
-    plot.background = element_blank())
-    }, bg="transparent", execOnResize = TRUE)
+      rect=element_blank(),
+      panel.grid = element_blank(),
+      panel.background= element_blank(),
+      plot.background = element_blank())
+    output$expl_timelinePlot <- renderPlot({expl_plt}, bg="transparent", execOnResize = TRUE)
   })
 }
 # Run the application 
