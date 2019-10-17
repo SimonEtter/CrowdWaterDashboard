@@ -23,6 +23,7 @@ ui <- dashboardPage(
       menuItem("Plastic Pollution",tabName = 'sb_pp_stats',icon = icon("dashboard")),
       menuItem("Contribution Plots", tabName = "sb_plots",icon = icon("chart-line")),
       menuItem("Citizen Scientist Plots", tabName = "sb_citsciplots",icon = icon("chart-line")),
+      menuItem("Explore a Spot", tabName = "sb_explore", icon = icon("search")),
       menuItem("About", tabName = "about",icon = icon("info-circle"))
     )),
   dashboardBody(shinyjs::useShinyjs(),
@@ -125,6 +126,11 @@ ui <- dashboardPage(
                             box(width = 12,    
                                 title = "Cumulative Plastic Pollution Contributors",    
                                 plotOutput("cumsumplotUsersPP", height = "500px"))
+                          )
+                  ),
+                  tabItem(tabName = "sb_explore",
+                          fluidPage(
+                            textInput("stationID", "Enter the ID of the Spot you want to explore", "")
                           )
                   ),
                   tabItem(tabName = "about",

@@ -1,0 +1,352 @@
+# data = t.WLClassApp
+# x = "WATER_LEVEL"
+# y = "MeasuredQ"
+
+wl_spearmanRankCorTest = function(data,x,y){
+  # do the spearman rank correlation
+  data[x]= as.numeric(as.character(data[x][,1]))
+  cortest = cor.test(formula= as.formula(paste("~",y,"+",x)),data = data,method='spearman')
+  # https://stackoverflow.com/questions/4951442/formula-with-dynamic-number-of-variables
+  return(cortest)
+}
+
+
+##########################################################################################
+# # app
+# inputdata = t.WLClassApp$datetimeCET
+# nsegments = 6
+# maxNcontribs=as.numeric(sneakyTab$maxContribPerHourApp[i])
+# outFile = paste0(PlotFolder,'/SpiderChart_',stationsWithData$Stream[i],'_',stationsWithData$Location[i],'_CWApp.png')
+# titleStr = paste0(stationsWithData$Stream[i],' - ',stationsWithData$Location[i],' [CrowdWater App]')
+
+## forms
+# inputdata = t.WLClassPnP$datetimeCET
+# outFile = paste0(PlotFolder,'/SpiderChart_',stationsWithData$Stream[i],'_',stationsWithData$Location[i],'_PenAndPaper.png')
+# titleStr = paste0(stationsWithData$Stream[i],' - ',stationsWithData$Location[i],' [CrowdWater Forms]')
+
+spiderChart = function(inputdata,maxNcontribs, nsegments, outFile,titleStr){
+  library(fmsb)
+  library(lubridate)
+  library(GISTools)
+  multifact = ceiling(maxNcontribs/nsegments)
+  segmentLabs = seq(from=0,to=nsegments*multifact,by = multifact)
+  
+  hours = table(hour(inputdata))
+  maxContribPerHour <<- max(hours)
+  
+  hours = as.data.frame(hours)
+  contribsPerHour = data.frame(hours = c(0,23:1), contributions = NA)
+  contribsPerHour$contributions = sapply(contribsPerHour$hours, function(x) {
+    ifelse(length(hours$Freq[hours$Var1==x])>0,hours$Freq[hours$Var1==x],0) 
+  })
+  
+  df4plot = as.data.frame(t(contribsPerHour$contributions))
+  colnames(df4plot) = contribsPerHour$hours
+  row.names(df4plot) = 'site_1'
+  df4plot = rbind(max(segmentLabs),0,df4plot)
+  
+  colors_border=crameriPalette('vik',n = nrow(df4plot)-2)
+  # make the insides transparent 
+  colors_in = GISTools::add.alpha(colors_border,0.4)
+  c_axLabs = seq(min(contribsPerHour$contributions),max(contribsPerHour$contributions),ceiling(diff(range(contribsPerHour$contributions))/6))
+  
+  png(outFile,width = 1024,height = 720)   
+  radarchart(df4plot, axistype=1, maxmin=T,seg = nsegments,
+             caxislabels=segmentLabs,
+             pcol=colors_border,
+             #custom polygon
+             pfcol=colors_in , plwd=4 , plty=1,
+             #custom the grid
+             cglcol="grey", cglty=1, axislabcol="grey",cglwd=0.8,
+             #custom labels
+             vlcex=2,calcex = 2,
+             title = list(titleStr,cex = 2),
+  )
+  # legend(x=1, y=1.4, legend = rownames(df4plot[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
+  dev.off()
+  
+}
+#################################################################################################################################
+# SPIDER CHART FOR CONTRIBUTION DURING THE YEAR (NORMALIZED TO ONE YEAR)
+spiderChart_year = function(inputdata,maxNcontribs, nsegments, outFile,titleStr){
+  library(fmsb)
+  library(lubridate)
+  library(GISTools)
+  
+  multifact = ceiling(maxNcontribs/nsegments)
+  segmentLabs = seq(from=0,to=nsegments*multifact,by = multifact)
+  
+  # take only the data within the first year since the start of the contributions
+  DatefirstContrib = inputdata[length(inputdata)]
+  DateOneYearLater = DatefirstContrib + 3600*24*365
+  if(inputdata[1]>DateOneYearLater){
+    inputdata_firstYear = inputdata[inputdata<DateOneYearLater & inputdata>DatefirstContrib]
+    
+    # find the week number of each contribution
+    weeks = table(week(inputdata_firstYear))
+    maxContribPerWeek <<- max(weeks)
+    
+    weeks = as.data.frame(weeks)
+    contribsPerWeek = data.frame(weeks = c(0,53:1),contributions=NA)
+    contribsPerWeek$contributions = sapply(contribsPerWeek$weeks, function(x) {
+      ifelse(length(weeks$Freq[weeks$Var1==x])>0,weeks$Freq[weeks$Var1==x],0) 
+    })
+    
+    df4plot = as.data.frame(t(contribsPerWeek$contributions))
+    colnames(df4plot) = contribsPerWeek$weeks
+    row.names(df4plot) = 'site_1'
+    df4plot = rbind(max(segmentLabs),0,df4plot)
+    
+    colors_border=crameriPalette('vik',n = nrow(df4plot)-2)
+    # make the insides transparent 
+    colors_in = GISTools::add.alpha(colors_border,0.4)
+    c_axLabs = seq(min(contribsPerWeek$contributions),max(contribsPerWeek$contributions),ceiling(diff(range(contribsPerWeek$contributions))/6))
+    
+    png(outFile,width = 1024,height = 720)   
+    radarchart(df4plot, axistype=1, maxmin=T,seg = nsegments,
+               caxislabels=segmentLabs,
+               pcol=colors_border,
+               #custom polygon
+               pfcol=colors_in , plwd=4 , plty=1,
+               #custom the grid
+               cglcol="grey", cglty=1, axislabcol="grey",cglwd=0.8,
+               #custom labels
+               vlcex=2,calcex = 2,
+               title = list(titleStr,cex = 2),
+    )
+    # legend(x=1, y=1.4, legend = rownames(df4plot[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
+    dev.off()
+  }else{
+    print(paste0(titleStr,' - has less than 1 year of data'))
+  }
+  
+  
+}
+##########################################################################################
+# Add a legend
+# Function to perform the dunn bonferroni post hoc test and plot it nicely
+
+# dataVar = t.WLClassPnP
+# xcolumn="WLClasses_floor"
+# ycolumn = "MeasuredQ"
+# outFile=paste0(PlotFolder,'/Bonferroni_',stationsWithData$Stream[i],'PenAndPaper.png')
+# titleStr = 'test'
+
+DunnTestPlot = function(dataVar,xcolumn,ycolumn,titleStr,outFile){
+  library(dunn.test)
+  library(lattice)
+  library(grid)
+  library(reshape2)
+  
+  kwtest = kruskal.test(as.formula(paste(ycolumn,"~",xcolumn)),data = dataVar)
+  
+  # make the two variables for the dunn.test
+  x_noNa = dataVar[xcolumn][!is.na(dataVar[ycolumn]) & !is.na(dataVar[xcolumn])]
+  y_noNa = dataVar[ycolumn][!is.na(dataVar[ycolumn]) & !is.na(dataVar[xcolumn])]
+  # perforn the DUNN:BONFERRONI POST HOC TEST
+  dunntest = dunn.test(x = y_noNa,g = x_noNa,kw=T,method = 'bonferroni',table = T, list=F)
+  # assessment of the strength of the effect
+  n = length(unique(y_noNa))
+  effectStrength = abs(dunntest$Z/sqrt(n))
+  
+  comparisons = t(as.data.frame(strsplit(dunntest$comparisons,' - ')))
+  resTab = as.data.frame(cbind(unname(comparisons),dunntest$P,dunntest$P.adjusted,effectStrength))
+  colnames(resTab)<- c('Comparison1','Comparison2','p-values','Adj.p-values','StrengthOfEffect')
+  
+  
+  p.nA.xtab = as.matrix(xtabs(as.numeric(as.character(resTab$`p-values`))~resTab$Comparison1+resTab$Comparison2))
+  p.Adj.xtab = as.matrix(xtabs(as.numeric(as.character(resTab$`Adj.p-values`))~resTab$Comparison1+resTab$Comparison2))
+  
+  
+  # reorder p.nA.xtab & p.Adj.xtab
+  newOrder = sort(unique(x_noNa))
+  
+  new.p.nA.xtab = matrix(nrow = nrow(p.nA.xtab),ncol = ncol(p.nA.xtab))
+  colnames(new.p.nA.xtab) = newOrder[2:length(newOrder)]
+  row.names(new.p.nA.xtab) = newOrder[1:length(newOrder)-1]
+  
+  p.nA.xtab[p.nA.xtab==0]<- NA
+  n.cnames.adj = colnames(new.p.nA.xtab)
+  n.rnames.adj = row.names(new.p.nA.xtab)
+  meltedOldTab = melt(p.nA.xtab)
+  meltedOldTab = meltedOldTab[!is.na(meltedOldTab$value),]
+  for(c in seq_along(n.cnames.adj)){
+    for(r in seq_along(n.rnames.adj)){
+      if(n.cnames.adj[c] == n.rnames.adj[r]){
+        next
+      }else{
+        valfromOldTab = meltedOldTab$value[xor((meltedOldTab$`resTab$Comparison1`== as.numeric(n.cnames.adj[c]) & meltedOldTab$`resTab$Comparison2`== as.numeric(n.rnames.adj[r])),
+                                               (meltedOldTab$`resTab$Comparison2`== as.numeric(n.cnames.adj[c]) & meltedOldTab$`resTab$Comparison1`== as.numeric(n.rnames.adj[r])))]
+        new.p.nA.xtab[r,c] = valfromOldTab
+        
+      }
+    }
+  }
+  # remove the obsolete values
+  for(c in seq_along(n.cnames.adj)){
+    if(length(which(is.na(new.p.nA.xtab[,c])))>0){
+      new.p.nA.xtab[which(is.na(new.p.nA.xtab[,c])):ncol(new.p.nA.xtab),c] = NA
+    }
+  }
+  # also reorder p.adjusted tab
+  new.p.Adj.xtab = matrix(nrow = nrow(p.Adj.xtab),ncol = ncol(p.Adj.xtab))
+  colnames(new.p.Adj.xtab) = newOrder[2:length(newOrder)]
+  row.names(new.p.Adj.xtab) = newOrder[1:length(newOrder)-1]
+  
+  p.Adj.xtab[p.Adj.xtab==0]<- NA
+  n.cnames.adj = colnames(new.p.Adj.xtab)
+  n.rnames.adj = row.names(new.p.Adj.xtab)
+  meltedOldTab = melt(p.Adj.xtab)
+  meltedOldTab = meltedOldTab[!is.na(meltedOldTab$value),]
+  for(c in seq_along(n.cnames.adj)){
+    for(r in seq_along(n.rnames.adj)){
+      if(n.cnames.adj[c] == n.rnames.adj[r]){
+        next
+      }else{
+        valfromOldTab = meltedOldTab$value[xor((meltedOldTab$`resTab$Comparison1`== n.cnames.adj[c] & meltedOldTab$`resTab$Comparison2`== n.rnames.adj[r]),(meltedOldTab$`resTab$Comparison2`== n.cnames.adj[c] & meltedOldTab$`resTab$Comparison1`== n.rnames.adj[r]))]
+        new.p.Adj.xtab[r,c] = valfromOldTab
+        
+      }
+    }
+  }
+  # remove the obsolete values
+  for(c in seq_along(n.cnames.adj)){
+    if(length(which(is.na(new.p.Adj.xtab[,c])))>0){
+      new.p.Adj.xtab[which(is.na(new.p.Adj.xtab[,c])):ncol(new.p.Adj.xtab),c] = NA
+    }
+  }
+  
+  
+  colors <- crameriPalette("oslo",length(seq(0.05,1,by=0.05)))
+  pointFill = "#FFFFFF"
+  
+  starIdx = as.data.frame(which(new.p.Adj.xtab<=0.05,arr.ind = T))
+  starIdx_nA = as.data.frame(which(new.p.nA.xtab<=0.05,arr.ind = T))
+  
+  p_symbol = 24
+  p_adj_symbol =25
+  gridtextsize = 40
+  symbolSize = 25
+
+  
+  Lplot = levelplot(new.p.nA.xtab,xlab ='', ylab='',aspect='iso',col.regions=colors,main = list(titleStr,cex = 2),
+                    colorkey = list(labels=list(labels = c('0','0.05','0.1','0.2','0.3','0.4','0.5'),at=c(0,0.05,0.1,0.2,0.3,0.4,0.5),cex=3)),
+                    scales=list(tck = c(3,0),
+                                x=list(rot=0,cex=3,draw=T), #,draw=ifelse(i==1||i==4,F,T)),
+                                y=list(cex=3,draw=T)), #draw=ifelse(i==2||i==4,F,T)),
+                    panel=function(...){             # for the points on the plot (Stars where p.adj <= 0.05)
+                      panel.levelplot(...)
+                      if(nrow(starIdx_nA)!=0){
+                        grid.points(x= starIdx_nA$row,y=starIdx_nA$col, pch=p_symbol,gp=gpar(fill=pointFill),size = unit(symbolSize,'pt'))}
+                      if(nrow(starIdx)!=0){
+                        grid.points(x= starIdx$row,y=starIdx$col, pch=p_adj_symbol,gp=gpar(fill=pointFill),size = unit(symbolSize,'pt'))}
+                      
+                      grid.points(x = 0.5 ,y = 0.18, pch=p_symbol,gp=gpar(fill=pointFill),size = unit(symbolSize,'pt'),default.units="npc")
+                      grid.points(x = 0.5 ,y = 0.08, pch=p_symbol,gp=gpar(fill=pointFill),size = unit(symbolSize,'pt'),default.units="npc")
+                      grid.points(x = 0.5 ,y = 0.08, pch=p_adj_symbol,gp=gpar(fill=pointFill),size = unit(symbolSize,'pt'),default.units="npc")
+                      grid.text('p',just='left',0.6,0.18, gp=gpar(fontsize=gridtextsize))
+                      grid.text(expression('p'[adj.]),just='left',0.60,0.08, gp=gpar(fontsize=gridtextsize))
+                      grid.text('< 0.05',just='left',0.71,0.18, gp=gpar(fontsize=gridtextsize),)
+                      grid.text('< 0.05',just='left',0.71,0.08, gp=gpar(fontsize=gridtextsize))
+                    })
+  
+  png(outFile,width = 1024,height = 720)   
+  print(Lplot)
+  dev.off()
+}
+
+##########################################################################################
+# # # Function to plot the WLClasses with measured discharge in boxplots
+# outFile = paste0(PlotFolder,'/Boxplot_',stationsWithData$Stream[i],'_CWApp.png')
+# dataVar = t.WLClassApp_WithWLData
+# xcolumn="WLClasses_floor"
+# ycolumn = "MeasuredWL"
+# xAxlabel = "WL-Class"
+# yAxlabel=paste0('Measured Streamflow [',stationsWithData$Q_unit[i],']')
+# titleStr = paste0(stationsWithData$Stream[i],' - ',stationsWithData$Location[i],' [CrowdWater App]')
+# spearmanRho = 0.5
+# spearmanP = 0.4
+# nContributors = stationsWithData$NrDiffPpl_App[i]
+
+wlclass_plot = function(outFile,dataVar,xcolumn,ycolumn,xAxlabel,yAxlabel,titleStr, spearmanRho, spearmanP,nContributors){
+  
+  groups = table(dataVar[xcolumn])
+  classes = as.numeric(names(groups))
+  class_withMoreThanFiveContribs = classes[groups>5]
+  # wilcRslt = vector(length = length(classes)-1)
+  # for(i in seq_along(classes)){
+  #   lowerClass = dataVar$MeasuredQ[dataVar[xcolumn]==classes[i]]
+  #   higherClass = dataVar$MeasuredQ[dataVar[xcolumn]==classes[i+1]]
+  #   
+  #   if(length(lowerClass[!is.na(lowerClass)])>1 && length(higherClass[!is.na(higherClass)])>1){
+  #     wilcRslt[i] = wilcox.test(higherClass,lowerClass,alternative='greater',paired=F)$p.value
+  #   }else{
+  #     wilcRslt[i] = NA
+  #   }
+  #   
+  # }
+  # 
+  # # do the test between the classes
+  # table(dataVar[xcolumn])
+  # 
+  fontSize = 30
+  classes = range(dataVar[xcolumn],na.rm=T)
+  wl_classlabs = classes[1]:classes[length(classes)]
+  ncontribs = length(dataVar[xcolumn][!is.na(dataVar[xcolumn]) & !is.na(dataVar[ycolumn])])
+  
+  df_TF4BoxPlots = sapply(class_withMoreThanFiveContribs,function(x) dataVar[xcolumn]==x)
+  if(length(df_TF4BoxPlots)){
+    TF4BoxPlots = sapply(seq_along(df_TF4BoxPlots[,1]),function(x) any(df_TF4BoxPlots[x,]))
+  }else{
+    TF4BoxPlots = rep(F,times=nrow(dataVar))
+  }
+  dataVar4Boxplots = dataVar[TF4BoxPlots,]
+
+  # plot with boxplots and points combined ---------------
+  png(outFile,width = 1024,height = 720)  
+  suppressWarnings(print(ggplot(data=dataVar)+
+    geom_boxplot(data = dataVar4Boxplots,aes_string(x=xcolumn,y=ycolumn,group=xcolumn),inherit.aes=F)+
+    geom_point(aes_string(x=xcolumn,y=ycolumn,group=xcolumn))+
+    scale_x_continuous(labels=wl_classlabs,breaks = wl_classlabs)+
+    ggtitle(titleStr)+ xlab(xAxlabel)+ylab(yAxlabel)+
+    annotate('text',-Inf,Inf,size=10,hjust=0,vjust=1,label=bquote(atop("Spearman's "~rho~" = "~.(round(spearmanRho,2))*", p-value = "~.(round(spearmanP,2)),"n = "~.(ncontribs)*", different participants = "~.(nContributors))))+
+    theme(axis.text=element_text(size=fontSize),
+          axis.title = element_text(size = fontSize),
+          title = element_text(size=fontSize,face = 'bold'))))
+  dev.off()
+  
+  
+  
+}
+##########################################################################################
+# Function to load the crameri color schemes and return a colorvector of the desired length
+# and of the desired color scheme
+# Possible names are: "bilbao"  "broc"    "cork"    "davos"   "devon"   "grayC"   "lajolla" "oslo"    "vik" 
+crameriPalette = function(name,n,newStartNewEnd = F,start=NA,end=NA){
+  load('//files.geo.uzh.ch/shared/group/h2k-data/Projects/CrowdWater/WP1/R_Scripts/colorSchemes/CrameriColorRlist.RData')
+  names = names(CrameriColList)
+  if(is.element(name,names)){
+    TotcolRamp = CrameriColList[[which(names==name)]]
+    if(newStartNewEnd){
+      if(is.na(start) && is.na(end)){
+        stop('at least one value for either "start" and "end" must be provided if "newStartNewEnd==TRUE"')
+      }else{
+        if(is.na(start)){start=1}
+        if(is.na(end)){end=length(TotcolRamp)}
+        TotcolRamp = TotcolRamp[start:end]
+        lengthCols = length(TotcolRamp)
+        newidxs = as.integer(seq(from=1,to=lengthCols,length.out = n))
+        newColVec = TotcolRamp[newidxs]
+      }
+    }else{
+      lengthCols = length(TotcolRamp)
+      newidxs = as.integer(seq(from=1,to=lengthCols,length.out = n))
+      newColVec = TotcolRamp[newidxs]
+    }
+  }else{
+    stop(paste0(name,' is not a member of ', paste0(names,collapse = ',')))
+  }
+  return(newColVec)
+}
+##########################################################################################
+
