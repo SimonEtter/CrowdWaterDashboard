@@ -2,10 +2,10 @@
 Download_AllCWdata_from_API = function(){
   require(jsonlite)
   require(curl)
-  WL_LUT = data.frame(WLID = 492:505,WLInput=-6:7)
-  SM_LUT = data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
-  TS_LUT = data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
-  PP_LUT = data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
+  WL_LUT <<- data.frame(WLID = 492:505,WLInput=-6:7)
+  SM_LUT <<- data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
+  TS_LUT <<- data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
+  PP_LUT <<- data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
   
   # output  path
   # outFile = 'G:/h2k-data/Projects/CrowdWater/Daten/CrowdWater/API_Exports/CrowdWater_APIData.csv'
@@ -47,12 +47,15 @@ Download_AllCWdata_from_API = function(){
   
   SMIds = t.data$fld_05_00000052
   t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMInput[SM_LUT$SMID==x]}))  
+  t.data$SMnr = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMnr[SM_LUT$SMID==x]}))  
   
   TSIds = t.data$fld_05_00000051
   t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSInput[TS_LUT$TSID==x]}))  
+  t.data$TSnr = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSnr[TS_LUT$TSID==x]}))  
   
   PPIds = t.data$fld_05_00000286
   t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPInput[PP_LUT$PPID==x]}))  
+  t.data$PPnr = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPnr[PP_LUT$PPID==x]}))  
   
   return(t.data)
   stop("all CW data downloaded")
@@ -62,10 +65,10 @@ Download_AllCWdata_from_API = function(){
 Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   require(jsonlite)
   require(curl)
-  WL_LUT = data.frame(WLID = 492:505,WLInput=-6:7)
-  SM_LUT = data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
-  TS_LUT = data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
-  PP_LUT = data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
+  WL_LUT <<- data.frame(WLID = 492:505,WLInput=-6:7)
+  SM_LUT <<- data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
+  TS_LUT <<- data.frame(TSID = 471:476,TSnr = seq_along(471:476),TSInput=c("dry streambed","damp / wet streambed","isolated pools","trickling water","standing water","flowing"))
+  PP_LUT <<- data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
   
   lastDate = sub(' ','%20',lastDate)
   
@@ -112,12 +115,15 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   
   SMIds = t.data$fld_05_00000052
   t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMInput[SM_LUT$SMID==x]}))  
+  t.data$SMnr = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMnr[SM_LUT$SMID==x]}))  
   
   TSIds = t.data$fld_05_00000051
   t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSInput[TS_LUT$TSID==x]}))  
+  t.data$TSnr = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSnr[TS_LUT$TSID==x]}))  
   
   PPIds = t.data$fld_05_00000286
   t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPInput[PP_LUT$PPID==x]}))  
+  t.data$PPnr = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPnr[PP_LUT$PPID==x]}))  
   
   
   return(t.data)

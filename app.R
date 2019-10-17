@@ -131,11 +131,11 @@ ui <- dashboardPage(
                           )
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
-                          fluidRow(box(width = 6,title="Enter the ID of the Spot you want to explore",textInput("stationID", "", "158599"))),
-                          fluidRow(box(width=1,title = "Root Spot Number", textOutput("expl_statRootID"))),
+                          fluidRow(box(width = 6,title="Enter the ID of the Spot you want to explore",textInput("stationID", "", "158599")),
+                                   box(width = 6,"Image of this Spot", htmlOutput("expl_thisImg"))),
+                          # fluidRow(box(width=1,title = "Root Spot Number", textOutput("expl_statRootID"))),
                           fluidRow(box(widht=2, title = "Root Spot Image", htmlOutput("expl_rootImg")),
-                                   box(widht=2, title = "Latest Image",htmlOutput("expl_latestImg"))),
-                          fluidRow(plotOutput("expl_timelinePlot", height = "500px")),
+                                   box(widht=2, title = "Latest Image", htmlOutput("expl_latestImg"))),
                           fluidRow(box(width = 12,    
                                        title = "Timeline of contributions",    
                                        plotOutput("expl_timelinePlot", height = "500px")%>% withSpinner(color='#7dbdeb'))
@@ -474,8 +474,16 @@ server <- function(input, output,session) {
   })
   
   # Explore contributions of stations with input id ----
+  # UsrInputID = reactive({
+  #   validate(
+  #     need(length(uq.roots[unlist(lapply(IdsPerRoot,function(x) input$stationID %in% x))])==1, label = "Input Id")
+  #   )
+  #   get(input$stationID)
+  # })
+ # ---> handling of wrong inputs: https://shiny.rstudio.com/articles/validation.html
   observeEvent(input$stationID,{
     expl_rootId = uq.roots[unlist(lapply(IdsPerRoot,function(x) input$stationID %in% x))]
+      
     # extract spot data
     expl_spotData = CWdata[CWdata$root_id==expl_rootId,]
     # define type of observation (WL, SM, PP , TS)
@@ -485,19 +493,25 @@ server <- function(input, output,session) {
     output$expl_statRootID <- renderText({paste0("The root spot id is: ",expl_rootId) })
     
     # download root image and latest update
+    output$expl_thisImg <-
+      renderText({
+        c('<div class="container"><img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="latest spot image" width="25%;"'),
+          '/><div class="bottom-right">',format(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID], "%d.%m.%Y %H:%M:%S"),'</div>'
+        )
+      })
     output$expl_rootImg <-
       renderText({
-        c(
-          '<img src=',
+        c('<div class="container"><img src=',
           paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==expl_rootId],'.jpg alt="root image" width="25%;"'),
-          '/>'
+          '/><div class="bottom-right">',format(expl_spotData$created_at[expl_spotData$Spot_ID==expl_rootId], "%d.%m.%Y %H:%M:%S"),'</div>'
         )
       })
     output$expl_latestImg <-
       renderText({
         c('<div class="container"><img src=',
-          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="root image" width="25%;"'),
-          '/><div class="bottom-right">',as.character(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID]),'</div>'
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[length(expl_spotData$image)],'.jpg alt="latest spot image" width="25;"'),
+          '/><div class="bottom-right">',format(expl_spotData$created_at[length(expl_spotData$image)], "%d.%m.%Y %H:%M:%S"),'</div>'
         )
       })
     
@@ -513,16 +527,31 @@ server <- function(input, output,session) {
       expl_plt = expl_plt + 
         geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel))+
         geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel))+
-        xlab('')+ylab('Water level class')+
-        theme_minimal()
+        xlab('')+ylab('Water level class')
+      
     }else if (expl_spotData$category[1]==469){
-      expl_plt = expl_plt + geom_hist(aes(y=expl_spotData$SoilMoisture))
+      ylabs = seq(min(expl_spotData$SMnr),max(expl_spotData$SMnr),by=1)
+      expl_plt = expl_plt + geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr))+
+        geom_line(color = "#FC4E07", alpha = 0.5,aes(y=expl_spotData$SMnr))+
+        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) SM_LUT$SMInput[SM_LUT$SMnr==x])))+
+        geom_rect(ymin=7.5,ymax=8.5,xmin=min(as.Date(expl_spotData$created_at)),xmax=max(as.Date(expl_spotData$created_at)),fill = "grey50",alpha=0.01)+
+        xlab('')+ylab('Soil Moisture Category')
+      
     }else if (expl_spotData$category[1]==468){
-      expl_plt = expl_plt + geom_point(aes(y=expl_spotData$TempStream))
+      ylabs = seq(min(expl_spotData$TSnr),max(expl_spotData$TSnr),by=1)
+      expl_plt = expl_plt + geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr))+
+        geom_line(color = "#0ADF91", alpha = 0.5,aes(y=expl_spotData$TSnr))+
+        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) TS_LUT$TSInput[TS_LUT$TSnr==x])))+
+        xlab('')+ylab('Temporary Stream Status')
+      
     }else if (expl_spotData$category[1]==1919){
-      expl_plt = expl_plt + geom_point(aes(y=expl_spotData$PlasticPieces))
+      ylabs = seq(min(expl_spotData$PPnr),max(expl_spotData$PPnr),by=1)
+      expl_plt = expl_plt + geom_point(color = "#901AC3",aes(y=expl_spotData$PPnr))+
+        geom_line(color = "#901AC3", alpha = 0.5,aes(y=expl_spotData$PPnr))+
+        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) PP_LUT$PPInput[PP_LUT$PPnr==x])))+
+        xlab('')+ylab('Plastic Pollution amount')
     }
-    expl_plt = expl_plt + theme(
+    expl_plt = expl_plt +theme_minimal()+ theme(
       rect=element_blank(),
       panel.grid = element_blank(),
       panel.background= element_blank(),
