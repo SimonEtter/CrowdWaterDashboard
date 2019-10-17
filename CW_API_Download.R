@@ -46,13 +46,13 @@ Download_AllCWdata_from_API = function(){
   t.data$Streamlevel = unlist(sapply(WLIds, function(x) if(is.na(x)){return(x)}else{WL_LUT$WLInput[WL_LUT$WLID==x]}))  
   
   SMIds = t.data$fld_05_00000052
-  t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{as.character(SM_LUT$SMInput[SM_LUT$SMID==x])}))  
+  t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMInput[SM_LUT$SMID==x]}))  
   
   TSIds = t.data$fld_05_00000051
-  t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{as.character(TS_LUT$TSInput[TS_LUT$TSID==x])}))  
+  t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSInput[TS_LUT$TSID==x]}))  
   
   PPIds = t.data$fld_05_00000286
-  t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{as.character(PP_LUT$PPInput[PP_LUT$PPID==x])}))  
+  t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPInput[PP_LUT$PPID==x]}))  
   
   return(t.data)
   stop("all CW data downloaded")
@@ -111,13 +111,13 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   t.data$Streamlevel = unlist(sapply(WLIds, function(x) if(is.na(x)){return(x)}else{WL_LUT$WLInput[WL_LUT$WLID==x]}))  
   
   SMIds = t.data$fld_05_00000052
-  t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{as.character(SM_LUT$SMInput[SM_LUT$SMID==x])}))  
+  t.data$SoilMoisture = unlist(sapply(SMIds, function(x) if(is.na(x)){return(x)}else{SM_LUT$SMInput[SM_LUT$SMID==x]}))  
   
   TSIds = t.data$fld_05_00000051
-  t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{as.character(TS_LUT$TSInput[TS_LUT$TSID==x])}))  
+  t.data$TempStream = unlist(sapply(TSIds, function(x) if(is.na(x)){return(x)}else{TS_LUT$TSInput[TS_LUT$TSID==x]}))  
   
   PPIds = t.data$fld_05_00000286
-  t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{as.character(PP_LUT$PPInput[PP_LUT$PPID==x])}))  
+  t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPInput[PP_LUT$PPID==x]}))  
   
   
   return(t.data)
