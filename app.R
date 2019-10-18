@@ -135,7 +135,7 @@ ui <- dashboardPage(
                           fluidPage(
                           box(width = 6,footer = tags$div(class = "submit",
                                                           tags$a(href = "https://www.spotteron.com/crowdwater", 
-                                                                 "IDs can be found in the link of spots on the map here", 
+                                                                 "IDs can be found in the browser link of spots on the CrowdWater map.", 
                                                                  target="_blank")
                           ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
                           box(width = 6,leafletOutput("expl_spotMap")),p(),
