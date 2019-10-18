@@ -130,17 +130,18 @@ ui <- dashboardPage(
                           )
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
+                          fluidPage(
                           box(width = 4,title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "158599"), actionButton("expl_btn","Show me the Spot")),
                           br(),
                           box(width = 12, title = "Timeline of contributions",    
                               plotOutput("expl_timelinePlot", height = "500px")), #%>% withSpinner(color='#7dbdeb'))
                           br(),
-                          # fluidRow(box(width=1,title = "Root Spot Number", textOutput("expl_statRootID"))),
+                          # box(width=1,title = "Root Spot Number", textOutput("expl_statRootID")),
                           
-                          fluidRow(box(width=4, title = "Image of this Spot", htmlOutput("expl_thisImg"),htmlOutput("expl_date_thisImg"),collapsible = T, collapsed = T)),br(),
-                          fluidRow(box(widht=4, title = "Root Spot Image", htmlOutput("expl_rootImg"),htmlOutput("expl_date_rootImg"),collapsible = T, collapsed = T)),br(),
-                          fluidRow(box(widht=4, title = "Latest Image", htmlOutput("expl_latestImg"),htmlOutput("expl_date_latestImg"),collapsible = T, collapsed = T))
-                  ),
+                          box(width=12, title = "Image of this Spot", htmlOutput("expl_thisImg"),htmlOutput("expl_date_thisImg"),collapsible = T, collapsed = T),br(),
+                          box(widht=12, title = "Root Spot Image", htmlOutput("expl_rootImg"),htmlOutput("expl_date_rootImg"),collapsible = T, collapsed = T),br(),
+                          box(widht=12, title = "Latest Image", htmlOutput("expl_latestImg"),htmlOutput("expl_date_latestImg"),collapsible = T, collapsed = T)
+                  )),
                   tabItem(tabName = "about",
                           fluidPage(
                             img(src='Logo_Crowdwater_pos.png', width = "240px"),
@@ -542,13 +543,15 @@ server <- function(input, output,session) {
       expl_plt = ggplot(data=expl_spotData,aes(x=as.Date(created_at)))+
         scale_x_date(date_labels = "%m.%Y")
       if(expl_spotData$category[1]==470){
+        ylabs =  seq(min(expl_spotData$Streamlevel,na.rm = T),max(expl_spotData$Streamlevel,na.rm = T),by=1)
         expl_plt = expl_plt + 
           geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel),size=1.5)+
           geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel),size=2.5)+
+          scale_y_continuous(breaks=ylabs,labels=ylabs)+
           xlab('')+ylab('Water level class')
         
       }else if (expl_spotData$category[1]==469){
-        ylabs = seq(min(expl_spotData$SMnr),max(expl_spotData$SMnr),by=1)
+        ylabs = seq(min(expl_spotData$SMnr,na.rm = T),max(expl_spotData$SMnr,na.rm = T),by=1)
         expl_plt = expl_plt + geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr))+
           geom_line(color = "#FC4E07", alpha = 0.5,aes(y=expl_spotData$SMnr),size=1.5)+
           geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr),size=2.5)+
@@ -557,7 +560,7 @@ server <- function(input, output,session) {
           xlab('')+ylab('Soil Moisture Category')
         
       }else if (expl_spotData$category[1]==468){
-        ylabs = seq(min(expl_spotData$TSnr),max(expl_spotData$TSnr),by=1)
+        ylabs = seq(min(expl_spotData$TSnr,na.rm = T),max(expl_spotData$TSnr,na.rm = T),by=1)
         expl_plt = expl_plt + geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr))+
           geom_line(color = "#0ADF91", alpha = 0.5,aes(y=expl_spotData$TSnr),size=1.5)+
           geom_point(color = "0ADF91",aes(y=expl_spotData$TSnr),size=2.5)+
@@ -565,7 +568,7 @@ server <- function(input, output,session) {
           xlab('')+ylab('Temporary Stream Status')
         
       }else if (expl_spotData$category[1]==1919){
-        ylabs = seq(min(expl_spotData$PPnr),max(expl_spotData$PPnr),by=1)
+        ylabs = seq(min(expl_spotData$PPnr,na.rm = T),max(expl_spotData$PPnr,na.rm = T),by=1)
         expl_plt = expl_plt + geom_point(color = "#901AC3",aes(y=expl_spotData$PPnr))+
           geom_line(color = "#901AC3", alpha = 0.5,aes(y=expl_spotData$PPnr),size=1.5)+
           geom_point(color = "#901AC3",aes(y=expl_spotData$TSnr),size=2.5)+
