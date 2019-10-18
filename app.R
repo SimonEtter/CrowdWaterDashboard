@@ -48,8 +48,7 @@ ui <- dashboardPage(
                           fluidRow(box(width = 6,title = NULL,uiOutput('sliderAll')), # see output$sliderAll = renderUI() in server()
                                    valueBoxOutput(width=3,"stationsWithXcontribs"),
                                    valueBoxOutput(width=3,"UsersWithXcontribs")
-                          ),
-                          actionButton("reloadAllCWdata","Refresh Dashboard from CrowdWater servers (might take a while)",icon = icon("download"))
+                          )
                   ),
                   tabItem(tabName="sb_wl_stats",
                           fluidRow(valueBoxOutput(width=3,"nWLRootSpots")%>% withSpinner(color='#7dbdeb')),
@@ -131,15 +130,17 @@ ui <- dashboardPage(
                           )
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
-                          fluidRow(box(width = 6,title="Enter the ID of the Spot you want to explore",textInput("stationID", "", "158599")),
-                                   box(width = 6,"Image of this Spot", htmlOutput("expl_thisImg"))),
+                          box(width = 4,title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "158599"), actionButton("expl_btn","Show me the Spot")),
+                          br(),
+                          box(width = 12, title = "Timeline of contributions",    
+                              plotOutput("expl_timelinePlot", height = "500px")), #%>% withSpinner(color='#7dbdeb'))
+                          br(),
                           # fluidRow(box(width=1,title = "Root Spot Number", textOutput("expl_statRootID"))),
-                          fluidRow(box(widht=2, title = "Root Spot Image", htmlOutput("expl_rootImg")),
-                                   box(widht=2, title = "Latest Image", htmlOutput("expl_latestImg"))),
-                          fluidRow(box(width = 12,    
-                                       title = "Timeline of contributions",    
-                                       plotOutput("expl_timelinePlot", height = "500px")%>% withSpinner(color='#7dbdeb'))
-                          )),
+                          
+                          fluidRow(box(width=4, title = "Image of this Spot", htmlOutput("expl_thisImg"),htmlOutput("expl_date_thisImg"),collapsible = T, collapsed = T)),br(),
+                          fluidRow(box(widht=4, title = "Root Spot Image", htmlOutput("expl_rootImg"),htmlOutput("expl_date_rootImg"),collapsible = T, collapsed = T)),br(),
+                          fluidRow(box(widht=4, title = "Latest Image", htmlOutput("expl_latestImg"),htmlOutput("expl_date_latestImg"),collapsible = T, collapsed = T))
+                  ),
                   tabItem(tabName = "about",
                           fluidPage(
                             img(src='Logo_Crowdwater_pos.png', width = "240px"),
@@ -147,12 +148,14 @@ ui <- dashboardPage(
                             HTML('The CrowdWater project was funded by the <a href="http://www.snf.ch">Swiss National Science Foundation</a> <br>'),
                             HTML('Click <a href="https://crowdwater.shinyapps.io/CrowdWaterDashboard/"target="_blank">here</a> for the fullscreen version. <br>'),
                             HTML('&#169; Simon Etter, the code can be found on my <a href="https://github.com/SimonEtter/CrowdWaterDashboard"target="_blank">GitHub</a> account.<br><br><br>'),
-                            img(src='uzh_logo_e_pos.png', width = "200px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px")
-                          )
+                            img(src='uzh_logo_e_pos.png', width = "200px"),HTML('<br><br>'),img(src='SNF_RGB_E_POS.png', width = "200px"),
+                            br(),br(),
+                            fluidRow(actionButton("reloadAllCWdata","Refresh Dashboard from CrowdWater servers (might take a while)",icon = icon("download"))))
                   )
                 )
   )
 )
+
 
 
 # Define server logic ----
@@ -480,83 +483,108 @@ server <- function(input, output,session) {
   #   )
   #   get(input$stationID)
   # })
- # ---> handling of wrong inputs: https://shiny.rstudio.com/articles/validation.html
-  observeEvent(input$stationID,{
+  # ---> handling of wrong inputs: https://shiny.rstudio.com/articles/validation.html
+  observeEvent(input$expl_btn,{
     expl_rootId = uq.roots[unlist(lapply(IdsPerRoot,function(x) input$stationID %in% x))]
-      
+    
     # extract spot data
     expl_spotData = CWdata[CWdata$root_id==expl_rootId,]
-    # define type of observation (WL, SM, PP , TS)
-    expl_osType = unique(expl_spotData$topic_id)[1] # to avoid errors if there are multiple categories in the vector (which should not be possible)
     
     # create the text output
-    output$expl_statRootID <- renderText({paste0("The root spot id is: ",expl_rootId) })
+    # output$expl_statRootID <- renderText({paste0("The root spot id is: ",expl_rootId) })
     
-    # download root image and latest update
+    # download image of entered ID
     output$expl_thisImg <-
       renderText({
-        c('<div class="container"><img src=',
-          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="latest spot image" width="25%;"'),
-          '/><div class="bottom-right">',format(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID], "%d.%m.%Y %H:%M:%S"),'</div>'
+        shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+        c('<img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="latest spot image" width="100%;"'),
+          '/>'
         )
       })
+    output$expl_date_thisImg = renderText({
+      shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+      format(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID], "%d.%m.%Y %H:%M:%S")
+    })
+    # download root image 
     output$expl_rootImg <-
       renderText({
-        c('<div class="container"><img src=',
-          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==expl_rootId],'.jpg alt="root image" width="25%;"'),
-          '/><div class="bottom-right">',format(expl_spotData$created_at[expl_spotData$Spot_ID==expl_rootId], "%d.%m.%Y %H:%M:%S"),'</div>'
+        shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
+        c('<img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==expl_rootId],'.jpg alt="root image" width="100%;"'),
+          '/>'
         )
       })
+    output$expl_date_rootImg = renderText({
+      shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+      format(expl_spotData$created_at[expl_spotData$Spot_ID==expl_rootId], "%d.%m.%Y %H:%M:%S")
+    })
+    #download image of latest contribution
     output$expl_latestImg <-
       renderText({
-        c('<div class="container"><img src=',
-          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[length(expl_spotData$image)],'.jpg alt="latest spot image" width="25;"'),
-          '/><div class="bottom-right">',format(expl_spotData$created_at[length(expl_spotData$image)], "%d.%m.%Y %H:%M:%S"),'</div>'
+        shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
+        c('<img src=',
+          paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[length(expl_spotData$image)],'.jpg alt="latest spot image" width="100%;"'),
+          '/>'
         )
       })
-    
+    output$expl_date_latestImg = renderText({
+      shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
+      format(expl_spotData$created_at[length(expl_spotData$image)], "%d.%m.%Y %H:%M:%S")
+      })
     
     # make chart of timeseries
     # water level	= 470 fld_05_00000066
     # soil moisture = 469 fld_05_00000052
     # temporary stream =	468 fld_05_00000051
     # plastic pollution =	1919 fld_05_00000286 (nr. of pieces)
-    expl_plt = ggplot(data=expl_spotData,aes(x=as.Date(created_at)))+
-      scale_x_date(date_labels = "%B %Y")
-    if(expl_spotData$category[1]==470){
-      expl_plt = expl_plt + 
-        geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel))+
-        geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel))+
-        xlab('')+ylab('Water level class')
+    if(nrow(expl_spotData)>0){
+      expl_plt = ggplot(data=expl_spotData,aes(x=as.Date(created_at)))+
+        scale_x_date(date_labels = "%m.%Y")
+      if(expl_spotData$category[1]==470){
+        expl_plt = expl_plt + 
+          geom_line(color = "#00AFBB", alpha = 0.5,aes(y=expl_spotData$Streamlevel),size=1.5)+
+          geom_point(color = "#00AFBB",aes(y=expl_spotData$Streamlevel),size=2.5)+
+          xlab('')+ylab('Water level class')
+        
+      }else if (expl_spotData$category[1]==469){
+        ylabs = seq(min(expl_spotData$SMnr),max(expl_spotData$SMnr),by=1)
+        expl_plt = expl_plt + geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr))+
+          geom_line(color = "#FC4E07", alpha = 0.5,aes(y=expl_spotData$SMnr),size=1.5)+
+          geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr),size=2.5)+
+          scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) SM_LUT$SMInput[SM_LUT$SMnr==x])))+
+          geom_rect(ymin=7.5,ymax=8.5,xmin=min(as.Date(expl_spotData$created_at)),xmax=max(as.Date(expl_spotData$created_at)),fill = "grey50",alpha=0.01)+
+          xlab('')+ylab('Soil Moisture Category')
+        
+      }else if (expl_spotData$category[1]==468){
+        ylabs = seq(min(expl_spotData$TSnr),max(expl_spotData$TSnr),by=1)
+        expl_plt = expl_plt + geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr))+
+          geom_line(color = "#0ADF91", alpha = 0.5,aes(y=expl_spotData$TSnr),size=1.5)+
+          geom_point(color = "0ADF91",aes(y=expl_spotData$TSnr),size=2.5)+
+          scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) TS_LUT$TSInput[TS_LUT$TSnr==x])))+
+          xlab('')+ylab('Temporary Stream Status')
+        
+      }else if (expl_spotData$category[1]==1919){
+        ylabs = seq(min(expl_spotData$PPnr),max(expl_spotData$PPnr),by=1)
+        expl_plt = expl_plt + geom_point(color = "#901AC3",aes(y=expl_spotData$PPnr))+
+          geom_line(color = "#901AC3", alpha = 0.5,aes(y=expl_spotData$PPnr),size=1.5)+
+          geom_point(color = "#901AC3",aes(y=expl_spotData$TSnr),size=2.5)+
+          scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) PP_LUT$PPInput[PP_LUT$PPnr==x])))+
+          xlab('')+ylab('Plastic Pollution amount')
+      }
+      expl_plt = expl_plt +theme_minimal()+ theme(
+        text = element_text(size=20),
+        rect=element_blank(),
+        panel.grid = element_blank(),
+        panel.background= element_blank(),
+        plot.background = element_blank())
       
-    }else if (expl_spotData$category[1]==469){
-      ylabs = seq(min(expl_spotData$SMnr),max(expl_spotData$SMnr),by=1)
-      expl_plt = expl_plt + geom_point(color = "#FC4E07",aes(y=expl_spotData$SMnr))+
-        geom_line(color = "#FC4E07", alpha = 0.5,aes(y=expl_spotData$SMnr))+
-        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) SM_LUT$SMInput[SM_LUT$SMnr==x])))+
-        geom_rect(ymin=7.5,ymax=8.5,xmin=min(as.Date(expl_spotData$created_at)),xmax=max(as.Date(expl_spotData$created_at)),fill = "grey50",alpha=0.01)+
-        xlab('')+ylab('Soil Moisture Category')
-      
-    }else if (expl_spotData$category[1]==468){
-      ylabs = seq(min(expl_spotData$TSnr),max(expl_spotData$TSnr),by=1)
-      expl_plt = expl_plt + geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr))+
-        geom_line(color = "#0ADF91", alpha = 0.5,aes(y=expl_spotData$TSnr))+
-        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) TS_LUT$TSInput[TS_LUT$TSnr==x])))+
-        xlab('')+ylab('Temporary Stream Status')
-      
-    }else if (expl_spotData$category[1]==1919){
-      ylabs = seq(min(expl_spotData$PPnr),max(expl_spotData$PPnr),by=1)
-      expl_plt = expl_plt + geom_point(color = "#901AC3",aes(y=expl_spotData$PPnr))+
-        geom_line(color = "#901AC3", alpha = 0.5,aes(y=expl_spotData$PPnr))+
-        scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) PP_LUT$PPInput[PP_LUT$PPnr==x])))+
-        xlab('')+ylab('Plastic Pollution amount')
     }
-    expl_plt = expl_plt +theme_minimal()+ theme(
-      rect=element_blank(),
-      panel.grid = element_blank(),
-      panel.background= element_blank(),
-      plot.background = element_blank())
-    output$expl_timelinePlot <- renderPlot({expl_plt}, bg="transparent", execOnResize = TRUE)
+    output$expl_timelinePlot <- renderPlot({
+      shiny::validate(
+        need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot).")
+      )
+      expl_plt}, bg="transparent", execOnResize = TRUE)
   })
 }
 # Run the application 
