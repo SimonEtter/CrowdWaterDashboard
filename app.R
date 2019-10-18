@@ -6,6 +6,8 @@ library(shinycssloaders)
 library(shinyjs)
 library(rdrop2)
 library(V8)
+library(leaflet)
+library(htmltools)
 # setwd('G:/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard/')
 # setwd('G:/group/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard')
 source('./CW_API_Download.R')
@@ -131,7 +133,12 @@ ui <- dashboardPage(
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
-                          box(width = 4,title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
+                          box(width = 6,footer = tags$div(class = "submit",
+                                                          tags$a(href = "https://www.spotteron.com/crowdwater", 
+                                                                 "IDs can be found in the link of spots on the map here", 
+                                                                 target="_blank")
+                          ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
+                          box(width = 6,leafletOutput("expl_spotMap")),p(),
                           br(),
                           box(width = 12, title = "Timeline of contributions",    
                               plotOutput("expl_timelinePlot", height = "500px")),
@@ -563,7 +570,7 @@ server <- function(input, output,session) {
         ylabs = seq(min(expl_spotData$TSnr,na.rm = T),max(expl_spotData$TSnr,na.rm = T),by=1)
         expl_plt = expl_plt + geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr))+
           geom_line(color = "#0ADF91", alpha = 0.5,aes(y=expl_spotData$TSnr),size=1.5)+
-          geom_point(color = "0ADF91",aes(y=expl_spotData$TSnr),size=2.5)+
+          geom_point(color = "#0ADF91",aes(y=expl_spotData$TSnr),size=2.5)+
           scale_y_continuous(breaks=ylabs,labels=as.character(sapply(ylabs,function(x) TS_LUT$TSInput[TS_LUT$TSnr==x])))+
           xlab('')+ylab('Temporary Stream Status')
         
@@ -588,7 +595,21 @@ server <- function(input, output,session) {
         need(nrow(expl_spotData) > 0,message = HTML('Enter an ID of an existing CrowdWater station. You can find the ID of a spot by clicking on a spot on www.spotteron.com/crowdwater and copying the last number of the link in the browser.'))
       )
       expl_plt}, bg="transparent", execOnResize = TRUE)
+    
+    # Leaflet map----
+    expl_point = data.frame(RootID = expl_spotData$root_id,longitude=expl_spotData$longitude,latitude=expl_spotData$latitude)
+    
+    output$expl_spotMap <- renderLeaflet({
+      leaflet(expl_point) %>%
+        addProviderTiles(providers$OpenStreetMap.HOT,
+                         options = providerTileOptions(noWrap = TRUE)
+        ) %>%
+        addMarkers(~longitude, ~latitude, popup = ~htmlEscape(RootID))
+    })
+    
   })
+  
+  
 }
 # Run the application 
 shinyApp(ui = ui, server = server)
