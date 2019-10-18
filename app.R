@@ -131,10 +131,10 @@ ui <- dashboardPage(
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
-                          box(width = 4,title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "158599"), actionButton("expl_btn","Show me the Spot")),
+                          box(width = 4,title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
                           br(),
                           box(width = 12, title = "Timeline of contributions",    
-                              plotOutput("expl_timelinePlot", height = "500px")), #%>% withSpinner(color='#7dbdeb'))
+                              plotOutput("expl_timelinePlot", height = "500px")),
                           br(),
                           # box(width=1,title = "Root Spot Number", textOutput("expl_statRootID")),
                           
@@ -497,14 +497,14 @@ server <- function(input, output,session) {
     # download image of entered ID
     output$expl_thisImg <-
       renderText({
-        shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+        shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
         c('<img src=',
           paste0('https://files.spotteron.com/images/spots/',expl_spotData$image[expl_spotData$Spot_ID==input$stationID],'.jpg alt="latest spot image" width="100%;"'),
           '/>'
         )
       })
     output$expl_date_thisImg = renderText({
-      shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+      shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
       format(expl_spotData$created_at[expl_spotData$Spot_ID==input$stationID], "%d.%m.%Y %H:%M:%S")
     })
     # download root image 
@@ -517,7 +517,7 @@ server <- function(input, output,session) {
         )
       })
     output$expl_date_rootImg = renderText({
-      shiny::validate(need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot)."))
+      shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
       format(expl_spotData$created_at[expl_spotData$Spot_ID==expl_rootId], "%d.%m.%Y %H:%M:%S")
     })
     #download image of latest contribution
@@ -585,7 +585,7 @@ server <- function(input, output,session) {
     }
     output$expl_timelinePlot <- renderPlot({
       shiny::validate(
-        need(nrow(expl_spotData) > 0,message = "Enter an ID of an existing CrowdWater station (last digit in the link of a spot).")
+        need(nrow(expl_spotData) > 0,message = HTML('Enter an ID of an existing CrowdWater station. You can find the ID of a spot by clicking on a spot on www.spotteron.com/crowdwater and copying the last number of the link in the browser.'))
       )
       expl_plt}, bg="transparent", execOnResize = TRUE)
   })
