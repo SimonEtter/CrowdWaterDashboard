@@ -137,7 +137,7 @@ ui <- dashboardPage(
                                                           tags$a(href = "https://www.spotteron.com/crowdwater", 
                                                                  "IDs can be found in the browser link of spots on the CrowdWater map.", 
                                                                  target="_blank")
-                          ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
+                          ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "105679"), actionButton("expl_btn","Show me the Spot")),
                           box(width = 6,leafletOutput("expl_spotMap")),
                           valueBoxOutput(width = 3,"expl_contrPerDay"),p(),
                           br(),
@@ -551,9 +551,9 @@ server <- function(input, output,session) {
     output$expl_contrPerDay = renderValueBox({
       valueBox(
         formatC(round(CntrEverXDays,1),format="f",digits=1, big.mark=','),
-    paste('1 Contribution every x days'),
-    icon = icon("globe",lib='font-awesome'),
-    color = "navy")
+    paste('days between contributions (on average)'),
+    icon = icon("hourglass-half",lib='font-awesome'),
+    color = "light-blue")
     })
     
   
