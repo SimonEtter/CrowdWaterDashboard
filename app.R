@@ -133,12 +133,13 @@ ui <- dashboardPage(
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
-                          box(width = 6,footer = tags$div(class = "submit",
+                          box(width = 3,footer = tags$div(class = "submit",
                                                           tags$a(href = "https://www.spotteron.com/crowdwater", 
                                                                  "IDs can be found in the browser link of spots on the CrowdWater map.", 
                                                                  target="_blank")
                           ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "<enter Spot-ID here>"), actionButton("expl_btn","Show me the Spot")),
-                          box(width = 6,leafletOutput("expl_spotMap")),p(),
+                          box(width = 6,leafletOutput("expl_spotMap")),
+                          valueBoxOutput(width = 3,"expl_contrPerDay"),p(),
                           br(),
                           box(width = 12, title = "Timeline of contributions",    
                               plotOutput("expl_timelinePlot", height = "500px")),
@@ -540,7 +541,22 @@ server <- function(input, output,session) {
       shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
       format(expl_spotData$created_at[length(expl_spotData$image)], "%d.%m.%Y %H:%M:%S")
       })
+    # contribution ever X day----
+    nrContribs = nrow(expl_spotData)
+    firstDay = expl_spotData$created_at[1]
+    lastDay = expl_spotData$created_at[nrow(expl_spotData)]
+    duration = as.numeric(lastDay-firstDay)
+    CntrEverXDays = 1/(nrContribs/duration)
     
+    output$expl_contrPerDay = renderValueBox({
+      valueBox(
+        formatC(round(CntrEverXDays,1),format="f",digits=1, big.mark=','),
+    paste('1 Contribution every x days'),
+    icon = icon("globe",lib='font-awesome'),
+    color = "navy")
+    })
+    
+  
     # make chart of timeseries
     # water level	= 470 fld_05_00000066
     # soil moisture = 469 fld_05_00000052
