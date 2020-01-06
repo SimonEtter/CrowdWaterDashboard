@@ -22,7 +22,7 @@ ui <- dashboardPage(
       menuItem("Overall",tabName = "sb_stats", icon = icon("dashboard")),
       menuItem("Water Level",tabName = 'sb_wl_stats',icon = icon("dashboard")),
       menuItem("Soil Moisture",tabName = 'sb_sm_stats',icon = icon("dashboard")),
-      menuItem("Intermittent Streams" ,tabName = 'sb_ts_stats',icon = icon("dashboard")),
+      menuItem("Temporary Streams" ,tabName = 'sb_ts_stats',icon = icon("dashboard")),
       menuItem("Plastic Pollution",tabName = 'sb_pp_stats',icon = icon("dashboard")),
       menuItem("Contribution Plots", tabName = "sb_plots",icon = icon("chart-line")),
       menuItem("Citizen Scientist Plots", tabName = "sb_citsciplots",icon = icon("chart-line")),
@@ -95,7 +95,7 @@ ui <- dashboardPage(
                           ),
                           fluidRow(
                             box(width = 12,    
-                                title = "Cumulative Intermittent Stream contributions",    
+                                title = "Cumulative Temporary Stream contributions",    
                                 plotOutput("cumsumplotTS", height = "500px"))
                           ),
                           fluidRow(
@@ -122,7 +122,7 @@ ui <- dashboardPage(
                           ),
                           fluidRow(
                             box(width = 12,    
-                                title = "Cumulative Intermittent Stream Contributors",    
+                                title = "Cumulative Temporary Stream Contributors",    
                                 plotOutput("cumsumplotUsersTS", height = "500px"))
                           ),
                           fluidRow(
@@ -218,7 +218,7 @@ server <- function(input, output,session) {
   maxcontribs = max(sapply(IdsPerRoot, function(x) length(x)))
   maxcontribUser = max(sapply(IdsPerUser, function(x) length(x)))
   
-  # for intermittent streams
+  # for temporary streams
   CWdataTS = CWdata[CWdata$category==468,]
   IdsPerRootTS = sapply(uq.roots,function(x) CWdataTS$Spot_ID[CWdataTS$root_id==x])
   IdsPerUserTS = sapply(uq.users,function(x) CWdataTS$Spot_ID[CWdataTS$spotted_by==x])
@@ -319,7 +319,7 @@ server <- function(input, output,session) {
   output$nTSContribs <- renderValueBox({
     valueBox(      
       formatC(nrow(CWdataTS), format="d", big.mark=','),
-      paste('Number of Intermittent Stream Contributions'),
+      paste('Number of Temporary Stream Contributions'),
       icon = icon("tint-slash",lib='font-awesome'),
       color = "olive")    })
   
@@ -342,7 +342,7 @@ server <- function(input, output,session) {
   output$nTSRootSpots <- renderValueBox({
     valueBox(
       formatC(length(unique(CWdataTS$root_id)),format="d", big.mark = ','),
-      "Number of Intermittent Stream Spots",
+      "Number of Temporary Stream Spots",
       icon=icon("tint-slash",lib='font-awesome'),
       color = "olive")
   })
@@ -367,7 +367,7 @@ server <- function(input, output,session) {
     sliderInput(inputId = "XnrContribs", label = "Number of contributions:",step = 1,min = 1, max = max(c(maxcontribs,maxcontribUser)),value = 10)
   })
   output$sliderInterStr = renderUI({
-    sliderInput(inputId = "XnrInterStrContribs", label = "Number of Intermittent Stream contributions:",step = 1,min = 1, max = max(c(maxcontribsTS,maxcontribUserTS)),value = 10)
+    sliderInput(inputId = "XnrInterStrContribs", label = "Number of Temporary Stream contributions:",step = 1,min = 1, max = max(c(maxcontribsTS,maxcontribUserTS)),value = 10)
   })
   output$sliderSM = renderUI({
     sliderInput(inputId = "XnrSMContribs", label = "Number of Soil Moistre contributions:",step = 1,min = 1, max = max(c(maxcontribsSM,maxcontribUserSM)),value = 10)
@@ -415,7 +415,7 @@ server <- function(input, output,session) {
       color='teal')
   })
   
-  # Users with more than X Intermittent Stream (slider) contributions
+  # Users with more than X Temporary Stream (slider) contributions
   output$UsersWithXTScontribs = renderValueBox({
     NrUsersWithMorethanXContribs=sum(unlist(lapply(IdsPerUserTS, function(x) length(x)>=input$XnrInterStrContribs)))
     valueBox(
@@ -445,12 +445,12 @@ server <- function(input, output,session) {
       color='teal')
   })
   
-  # Intermittent Stream Stations with more than X (slider) contributions
+  # Temporary Stream Stations with more than X (slider) contributions
   output$IntStrStationsWithXContribs = renderValueBox({
     NrStatsWithMorethanXContribs=sum(unlist(lapply(IdsPerRootTS, function(x) length(x)>=input$XnrInterStrContribs)))
     valueBox(
       value=formatC(NrStatsWithMorethanXContribs), 
-      subtitle=paste0('Intermittent Stream Stations with \u2265 ',input$XnrInterStrContribs,' contributions'),
+      subtitle=paste0('Temporary Stream Stations with \u2265 ',input$XnrInterStrContribs,' contributions'),
       icon = icon("signal",lib='font-awesome'),
       color='teal')
   })
