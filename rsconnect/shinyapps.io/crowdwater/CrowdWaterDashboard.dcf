@@ -5,9 +5,9 @@ account: crowdwater
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1072969
-bundleId: 2708740
+bundleId: 2708810
 url: https://crowdwater.shinyapps.io/CrowdWaterDashboard/
-when: 1578294086.04749
+when: 1578296994.22852
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: LICENSE|README.md|CWdata/CW_Data.csv
+ignoredFiles: LICENSE|README.md
