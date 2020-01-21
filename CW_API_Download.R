@@ -182,3 +182,27 @@ cumplot = function(dateSeries,cumSums){
   }
   return(cumPlot)
 }
+
+# #  Function to combine leaflet with a static probability density function from the CW points
+# # --> rather useless (because this way its only global)
+# addHeatMap_kernel <- function(data, lon, lat, ...) {
+#   df <- data.table::as.data.table(data)
+#   
+#   lon_var <- dplyr::pull(df, !! enquo(lon))
+#   lat_var <- dplyr::pull(df, !! enquo(lat))
+#   
+#   lon_bw <- MASS::bandwidth.nrd(lon_var)
+#   lat_bw <- MASS::bandwidth.nrd(lat_var)
+#   
+#   lon_lat_df <- dplyr::select(df, !! enquo(lon), !! enquo(lat))
+#   
+#   kde <- KernSmooth::bkde2D(lon_lat_df, bandwidth = c(lon_bw, lat_bw))
+#   CL <- contourLines(kde$x1 , kde$x2 , kde$fhat)
+#   LEVS <- as.factor(sapply(CL, `[[`, "level"))
+#   NLEV <- nlevels(LEVS)
+#   pgons <- lapply(1:length(CL), function(i)
+#     sp::Polygons(list(sp::Polygon(cbind(CL[[i]]$x, CL[[i]]$y))), ID = i))
+#   spgons <- sp::SpatialPolygons(pgons)
+#   
+#   leaflet::addPolygons(data = spgons, color = heat.colors(NLEV, NULL)[LEVS], stroke = FALSE, ...)
+# }

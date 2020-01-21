@@ -52,8 +52,12 @@ ui <- dashboardPage(
                                    valueBoxOutput(width=3,"stationsWithXcontribs"),
                                    valueBoxOutput(width=3,"UsersWithXcontribs")
                           ),
-                          fluidPage(box(width = 12,title = "Heatmap of CrowdWater spots",
-                                        leafletOutput("heatmap")))
+                          fluidPage(box(width = 12,title = "Leaflet Heatmap of CrowdWater spots",
+                                        leafletOutput("heatmap_heatmap"))
+                                    )#,
+                          # --> rather useless (because this way its only global)
+                          # fluidPage(box(width = 12,title = "Kernel Heatmap of CrowdWater spots",
+                          #                           leafletOutput("heatmap_kernel")))
                   ),
                   tabItem(tabName="sb_wl_stats",
                           fluidRow(valueBoxOutput(width=3,"nWLRootSpots")%>% withSpinner(color='#7dbdeb')),
@@ -298,11 +302,19 @@ server <- function(input, output,session) {
   output$cumsumplotUsersPP = renderPlot({cumPlotUsersPP})
   
   # Heatmap
-  output$heatmap <- renderLeaflet({
+  output$heatmap_heatmap <- renderLeaflet({
     leaflet(CWdata) %>%
       addTiles(group="OSM") %>%
-      addHeatmap(group="heat", lng=~longitude, lat=~latitude, max=.6, blur = 60, radius=10)
+      addHeatmap(group="heat", lng=~longitude, lat=~latitude, max=.6, blur = 40, radius=20)
   })
+  
+  # # Heatmap based on kernel density
+  # # --> rather useless (because this way its only global)
+  # output$heatmap_kernel <- renderLeaflet({
+  # leaflet() %>%
+  #   addTiles(group = "OSM") %>%
+  #   addHeatMap_kernel(data = CWdata, lon = longitude, lat = latitude)
+  # })
   
   # Value Boxes ----
   output$TotnContribs <- renderValueBox({
