@@ -7,6 +7,7 @@ library(shinyjs)
 library(rdrop2)
 library(V8)
 library(leaflet)
+library(leaflet.extras)
 library(htmltools)
 # setwd('G:/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard/')
 # setwd('G:/group/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard')
@@ -50,7 +51,9 @@ ui <- dashboardPage(
                           fluidRow(box(width = 6,title = NULL,uiOutput('sliderAll')), # see output$sliderAll = renderUI() in server()
                                    valueBoxOutput(width=3,"stationsWithXcontribs"),
                                    valueBoxOutput(width=3,"UsersWithXcontribs")
-                          )
+                          ),
+                          fluidPage(box(width = 12,title = "Heatmap of CrowdWater spots",
+                                        leafletOutput("heatmap")))
                   ),
                   tabItem(tabName="sb_wl_stats",
                           fluidRow(valueBoxOutput(width=3,"nWLRootSpots")%>% withSpinner(color='#7dbdeb')),
@@ -293,6 +296,13 @@ server <- function(input, output,session) {
   
   cumPlotUsersPP = cumplot(dateSeriesPP, cumSumsUsersPP)
   output$cumsumplotUsersPP = renderPlot({cumPlotUsersPP})
+  
+  # Heatmap
+  output$heatmap <- renderLeaflet({
+    leaflet(CWdata) %>%
+      addTiles(group="OSM") %>%
+      addHeatmap(group="heat", lng=~longitude, lat=~latitude, max=.6, blur = 60, radius=10)
+  })
   
   # Value Boxes ----
   output$TotnContribs <- renderValueBox({
