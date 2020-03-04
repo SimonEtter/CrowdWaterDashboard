@@ -248,7 +248,7 @@ server <- function(input, output,session) {
   # Monthly active users over the entire period----
   monthsAll = paste0(format(CWdata$created_at,'%Y'),'_',format(CWdata$created_at,'%m'))
   # create unique months from dateSeries, because there might be months wihtout contributions
-  uq.months = unique(paste0(format(dateSeries,'%Y'),' ',format(dateSeries,'%m')))
+  uq.months = unique(paste0(format(dateSeries,'%Y'),'_',format(dateSeries,'%m')))
   monthlyActiveUsersAll = sapply(uq.months,function(x){
     length(unique(CWdata$created_by[monthsAll==x]))
   })
