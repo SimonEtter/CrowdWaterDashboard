@@ -9,8 +9,7 @@ library(V8)
 library(leaflet)
 library(leaflet.extras)
 library(htmltools)
-# setwd('G:/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard/')
-# setwd('G:/group/h2k-data/Projects/CrowdWater/App & Homepage/Homepage/DataDashboard/CrowdWaterDashboard')
+setwd('Z:/group/h2k-data/Projects/CrowdWater/Oeffentlichkeitsarbeit/Homepage/DataDashboard/CrowdWaterDashboard')
 source('./CW_API_Download.R')
 # icons: http://rstudio.github.io/shinydashboard/appearance.html
 # the javascript code to refresh the entire page.
@@ -26,6 +25,7 @@ ui <- dashboardPage(
       menuItem("Temporary Streams" ,tabName = 'sb_ts_stats',icon = icon("dashboard")),
       menuItem("Plastic Pollution",tabName = 'sb_pp_stats',icon = icon("dashboard")),
       menuItem("Contribution Plots", tabName = "sb_plots",icon = icon("chart-line")),
+      menuItem("Monthly active users", tabName = "sb_mauPlots",icon = icon("chart-line")),
       menuItem("Citizen Scientist Plots", tabName = "sb_citsciplots",icon = icon("chart-line")),
       menuItem("Explore a Spot", tabName = "sb_explore", icon = icon("search")),
       menuItem("About", tabName = "about",icon = icon("info-circle"))
@@ -138,6 +138,33 @@ ui <- dashboardPage(
                                 plotOutput("cumsumplotUsersPP", height = "500px"))
                           )
                   ),
+                  tabItem(tabName="sb_mauPlots",
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Monthly active contributors",    
+                                plotOutput("mauPlotAll", height = "500px") %>% withSpinner(color='#7dbdeb'))
+                          ),
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Monthly active waterlevel contributors",    
+                                plotOutput("mauPlotWL", height = "500px"))
+                          ),
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Monthly active soil moisture contributors",    
+                                plotOutput("mauPlotSM", height = "500px"))
+                          ),
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Monthly active intermittent stream contributors",    
+                                plotOutput("mauPlotTS", height = "500px"))
+                          ),
+                          fluidRow(
+                            box(width = 12,    
+                                title = "Monthly active plastic pollution contributors",    
+                                plotOutput("mauPlotPP", height = "500px"))
+                          )
+                  ),
                   tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
                           box(width = 3,footer = tags$div(class = "submit",
@@ -218,6 +245,14 @@ server <- function(input, output,session) {
   cumSums = sapply(dateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
   cumSumUsers = sapply(dateSeries,function(x) length(unique(CWdata$spotted_by[CWdata$created_at<=x])))
   
+  # Monthly active users over the entire period----
+  monthsAll = paste0(format(CWdata$created_at,'%Y'),'_',format(CWdata$created_at,'%m'))
+  # create unique months from dateSeries, because there might be months wihtout contributions
+  uq.months = unique(paste0(format(dateSeries,'%Y'),' ',format(dateSeries,'%m')))
+  monthlyActiveUsersAll = sapply(uq.months,function(x){
+    length(unique(CWdata$created_by[monthsAll==x]))
+  })
+  
   IdsPerRoot = sapply(uq.roots,function(x) CWdata$Spot_ID[CWdata$root_id==x])
   IdsPerUser = sapply(uq.users,function(x) CWdata$Spot_ID[CWdata$spotted_by==x])
   
@@ -235,7 +270,12 @@ server <- function(input, output,session) {
   dateSeriesTS = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesTS)+3600,by='1 day')
   cumSumsTS = sapply(dateSeriesTS,function(x) length(CWdataTS$Spot_ID[CWdataTS$created_at<=x]))
   cumSumsUsersTS = sapply(dateSeriesTS,function(x) length(unique(CWdataTS$spotted_by[CWdataTS$created_at<=x])))
-  
+  # Monthly active users
+  monthsTS = paste0(format(CWdataTS$created_at,'%Y'),'_',format(CWdataTS$created_at,'%m'))
+  # create unique months from dateSeries, because there might be months wihtout contributions
+  monthlyActiveUsersTS = sapply(uq.months,function(x){
+    length(unique(CWdataTS$created_by[monthsTS==x]))
+  })
   # for soil moisture
   CWdataSM = CWdata[CWdata$category==469,]
   IdsPerRootSM = sapply(uq.roots,function(x) CWdataSM$Spot_ID[CWdataSM$root_id==x])
@@ -246,6 +286,12 @@ server <- function(input, output,session) {
   dateSeriesSM = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesSM)+3600,by='1 day')
   cumSumsSM = sapply(dateSeriesSM,function(x) length(CWdataSM$Spot_ID[CWdataSM$created_at<=x]))
   cumSumsUsersSM = sapply(dateSeriesSM,function(x) length(unique(CWdataSM$spotted_by[CWdataSM$created_at<=x])))
+  # Monthly active users
+  monthsSM = paste0(format(CWdataSM$created_at,'%Y'),'_',format(CWdataSM$created_at,'%m'))
+  # create unique months from dateSeries, because there might be months wihtout contributions
+  monthlyActiveUsersSM = sapply(uq.months,function(x){
+    length(unique(CWdataSM$created_by[monthsSM==x]))
+  })
   
   # for plastic pollution streams
   CWdataPP = CWdata[CWdata$category==1919,]
@@ -257,6 +303,12 @@ server <- function(input, output,session) {
   dateSeriesPP = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesPP)+3600,by='1 day')
   cumSumsPP = sapply(dateSeriesPP,function(x) length(CWdataPP$Spot_ID[CWdataPP$created_at<=x]))
   cumSumsUsersPP = sapply(dateSeriesPP,function(x) length(unique(CWdataPP$spotted_by[CWdataPP$created_at<=x])))
+  # Monthly active users
+  monthsPP = paste0(format(CWdataPP$created_at,'%Y'),'_',format(CWdataPP$created_at,'%m'))
+  # create unique months from dateSeries, because there might be months wihtout contributions
+  monthlyActiveUsersPP = sapply(uq.months,function(x){
+    length(unique(CWdataPP$created_by[monthsPP==x]))
+  })
   
   # for water levels
   CWdataWL = CWdata[CWdata$category==470,]
@@ -268,38 +320,60 @@ server <- function(input, output,session) {
   dateSeriesWL = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.datesWL)+3600,by='1 day')
   cumSumsWL = sapply(dateSeriesWL,function(x) length(CWdataWL$Spot_ID[CWdataWL$created_at<=x]))
   cumSumsUsersWL = sapply(dateSeriesWL,function(x) length(unique(CWdataWL$spotted_by[CWdataWL$created_at<=x])))
+  # Monthly active users
+  monthsWL = paste0(format(CWdataWL$created_at,'%Y'),'_',format(CWdataWL$created_at,'%m'))
+  # create unique months from dateSeries, because there might be months wihtout contributions
+  monthlyActiveUsersWL = sapply(uq.months,function(x){
+    length(unique(CWdataWL$created_by[monthsWL==x]))
+  })
   
   # Plots with contributions ----
-  cumPlot = cumplot(dateSeries, cumSums)
+  cumPlot = cumplot(dateSeries, cumSums,'Cumulative Contributions')
   output$cumsumplot = renderPlot({cumPlot})
   
-  cumPlotWL = cumplot(dateSeriesWL, cumSumsWL)
+  cumPlotWL = cumplot(dateSeriesWL, cumSumsWL,'Cumulative Contributions')
   output$cumsumplotWL = renderPlot({cumPlotWL})
   
-  cumPlotSM = cumplot(dateSeriesSM, cumSumsSM)
+  cumPlotSM = cumplot(dateSeriesSM, cumSumsSM,'Cumulative Contributions')
   output$cumsumplotSM = renderPlot({cumPlotSM})
   
-  cumPlotTS = cumplot(dateSeriesTS, cumSumsTS)
+  cumPlotTS = cumplot(dateSeriesTS, cumSumsTS,'Cumulative Contributions')
   output$cumsumplotTS = renderPlot({cumPlotTS})
   
-  cumPlotPP = cumplot(dateSeriesPP, cumSumsPP)
+  cumPlotPP = cumplot(dateSeriesPP, cumSumsPP,'Cumulative Contributions')
   output$cumsumplotPP = renderPlot({cumPlotPP})
   
   # Plots with Users
-  cumPlotUsers = cumplot(dateSeries, cumSumUsers)
+  cumPlotUsers = cumplot(dateSeries, cumSumUsers,'Cumulative Contributors')
   output$cumsumplotUsers = renderPlot({cumPlotUsers})
   
-  cumPlotUsersWL = cumplot(dateSeriesWL, cumSumsUsersWL)
+  cumPlotUsersWL = cumplot(dateSeriesWL, cumSumsUsersWL,'Cumulative Contributors')
   output$cumsumplotUsersWL = renderPlot({cumPlotUsersWL})
   
-  cumPlotUsersSM = cumplot(dateSeriesSM, cumSumsUsersSM)
+  cumPlotUsersSM = cumplot(dateSeriesSM, cumSumsUsersSM,'Cumulative Contributors')
   output$cumsumplotUsersSM = renderPlot({cumPlotUsersSM})
   
-  cumPlotUsersTS = cumplot(dateSeriesTS, cumSumsUsersTS)
+  cumPlotUsersTS = cumplot(dateSeriesTS, cumSumsUsersTS, 'Cumulative Contributors')
   output$cumsumplotUsersTS = renderPlot({cumPlotUsersTS})
   
-  cumPlotUsersPP = cumplot(dateSeriesPP, cumSumsUsersPP)
+  cumPlotUsersPP = cumplot(dateSeriesPP, cumSumsUsersPP,'Cumulative Contributors')
   output$cumsumplotUsersPP = renderPlot({cumPlotUsersPP})
+  
+  # Plot with montly active users
+  MauPlotAll = mauPlot(monthlyActiveUsersAll)
+  output$mauPlotAll = renderPlot({MauPlotAll})
+  
+  MauPlotWL = mauPlot(monthlyActiveUsersWL)
+  output$mauPlotWL = renderPlot({MauPlotWL})
+  
+  MauPlotSM = mauPlot(monthlyActiveUsersSM)
+  output$mauPlotSM = renderPlot({MauPlotSM})
+  
+  MauPlotTS = mauPlot(monthlyActiveUsersTS)
+  output$mauPlotTS = renderPlot({MauPlotTS})
+  
+  MauPlotPP = mauPlot(monthlyActiveUsersPP)
+  output$mauPlotPP = renderPlot({MauPlotPP})
   
   # Heatmap
   output$heatmap_heatmap <- renderLeaflet({
@@ -573,7 +647,7 @@ server <- function(input, output,session) {
     output$expl_contrPerDay = renderValueBox({
       valueBox(
         formatC(round(CntrEverXDays,1),format="f",digits=1, big.mark=','),
-    paste('days between contributions (on average)'),
+    paste('average days between contributions'),
     icon = icon("hourglass-half",lib='font-awesome'),
     color = "light-blue")
     })

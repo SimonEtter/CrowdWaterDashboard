@@ -74,7 +74,7 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   
   # String used as a basis for making the API-Queries
   baseString = 'https://www.spotteron.com/api/v2/spots?filter[topic_id]=7&filter[created_at__gt]=2016-01-01%2014:30:00&limit=100&page=1&order[]=created_at+asc'
-
+  
   allDownloaded = FALSE
   downloadString = sub('2016-01-01%2014:30:00',lastDate,baseString)
   counter = 1
@@ -133,7 +133,7 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
 # make the cumsumplot with the contributions ----
 # dateSeries=dateSeriesPP
 # cumSums=cumSumsUsersPP
-cumplot = function(dateSeries,cumSums){
+cumplot = function(dateSeries,cumSums,ylabel){
   
   if(max(cumSums>1000)){
     thousandSeq = which(1:max(cumSums) %% 1000 == 0)
@@ -143,7 +143,7 @@ cumplot = function(dateSeries,cumSums){
     thousandSeq = which(1:max(cumSums) %% 100 == 0)
   }else if (max(cumSums)<=100){
     thousandSeq = which(1:max(cumSums) %% 50 == 0)
-    }
+  }
   datesCracking1000Marks = lapply(thousandSeq,function(x) min(dateSeries[cumSums>=x]))
   datesCracking1000Marks_ext = datesCracking1000Marks
   datesCracking1000Marks_ext[[length(datesCracking1000Marks_ext)+1]] = dateSeries[length(dateSeries)]
@@ -165,7 +165,7 @@ cumplot = function(dateSeries,cumSums){
     geom_point(aes(x=dateSeries[length(dateseries)],y=max(cumSums))) + 
     geom_hline(yintercept = thousandSeq,col='lightgray',lty=2)+
     geom_vline(xintercept = datesCracking1000Marks_ext,col='lightgray',lty=2) +
-    ylab('Cumulative Contributions') + xlab('Project duration') + 
+    ylab(ylabel) + xlab('Project duration') + 
     scale_y_continuous(limits = c(0,max(cumSums)+200),labels = if(max(cumSums)-max(thousandSeq)>500){c(0,thousandSeq,max(cumSums))}else{c(0,thousandSeq)}, 
                        breaks = if(max(cumSums)-max(thousandSeq)>500){c(0,thousandSeq,max(cumSums))}else{c(0,thousandSeq)})+
     annotate(geom = "text",x = as.POSIXct(unlist(datesCracking1000Marks),origin = '1970-01-01 00:00:00',format = '%Y-%m-%d %H:%M:%S'),y = thousandSeq+thousandSeq[1]/12, 
@@ -182,7 +182,29 @@ cumplot = function(dateSeries,cumSums){
   }
   return(cumPlot)
 }
-
+# monthly active users plot ----
+# monthlyActiveUsers = monthlyActiveUsersAll
+mauPlot = function(monthlyActiveUsers){
+  
+  names = names(monthlyActiveUsers)
+  years = substr(names,1,4)
+  df =  data.frame(months = names, mau = monthlyActiveUsers, year = years)
+  nrYears = length(unique(years))
+  # make the colors the same length as the number of years
+  cols=rep(c('gray37', 'gray78'),nrYears/2)
+  if(nrYears%%2){cols=c(cols,cols[1])} 
+  
+  mauPlot = ggplot(data = df,aes(x=months,y=mau))+
+    geom_bar(aes(fill=year),stat='identity')+
+    ylab('Monthly active users')+xlab('Month')+
+    scale_fill_manual(values = cols)+
+    theme_minimal()+theme(
+      panel.grid = element_blank(),
+      axis.text.x = element_text(angle = 90, hjust = 1),
+      legend.position="none")
+  
+  return(mauPlot)
+}
 # #  Function to combine leaflet with a static probability density function from the CW points
 # # --> rather useless (because this way its only global)
 # addHeatMap_kernel <- function(data, lon, lat, ...) {
