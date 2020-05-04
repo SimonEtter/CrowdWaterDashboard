@@ -1,36 +1,37 @@
 ## Function to Download CrowdWater data from API ----
+# Currently (26.03.2020) the API allows only 100 downloads per query, therefore it is done in iterations
+# This function downloads the entire CrowdWater dataset from the Spotteron REST API 
 Download_AllCWdata_from_API = function(){
   require(jsonlite)
   require(curl)
+  
+  # define the lookup tables also for outside the function
+  # (WL = Water Level, SM = Soil Moisture, TS = Temporary Streams, PP = Plastic Pollution, LUT = LookUp Table)
+  # numbers refer to the numeric codes for the input values of the citizen scientists, all categories except the waterlevels have string names
   WL_LUT <<- data.frame(WLID = 492:505,WLInput=-6:7)
   SM_LUT <<- data.frame(SMID = 477:484,SMnr = seq_along(477:484),SMInput=c("dry","gradually damp","gradually wet","immediately wet","muddy","welling","submerged","rain / snow"))
   TS_LUT <<- data.frame(TSID = 471:476,TSnr = c(1,2,3,5,4,6),TSInput=c("dry streambed","damp / wet streambed","isolated pools","standing water","trickling water","flowing"))
   PP_LUT <<- data.frame(PPID = 1926:1933,PPnr=seq_along(1926:1933),PPInput= c("no plastic","1-2 pieces","3-5 pieces","6-10 pieces","11-20 pieces","21-100 pieces","100+ pieces","covered entirely"))
   
-  # output  path
-  # outFile = 'G:/h2k-data/Projects/CrowdWater/Daten/CrowdWater/API_Exports/CrowdWater_APIData.csv'
-  
-  # String used as a basis for making the API-Queries
+  # String used as a basis for making the API-Queries with a date that is surely before the first app contributions
   baseString = 'https://www.spotteron.com/api/v2/spots?filter[topic_id]=7&filter[created_at__gt]=2016-01-01%2014:30:00&limit=100&page=1&order[]=created_at+asc'
-  # imagePreString = "https://files.spotteron.com/images/spots/"
-  
+
   allDownloaded = FALSE
-  # last_startDate = "2016-01-01 00:00"
   t.downloadString = baseString
   counter = 1
   while(!allDownloaded){
-    
+    # get the start date from the previous iteration
     last_startDate = substr(t.downloadString,82,102)
-    #insert desired ROOT ID
+    # 
     if(counter==1){
       t.preldata = fromJSON(t.downloadString)[[1]]
       t.data = cbind(t.preldata$id,t.preldata$attributes)
     }else{
       t.preldata = fromJSON(t.downloadString)[[1]]
       t.newdata = cbind(t.preldata$id,t.preldata$attributes)
+      # if no more data is available ()
       if(is.null(t.newdata)){
         allDownloaded=T
-        # stop("all CW data downloaded")
       }
       t.data = rbind(t.data,t.newdata)
     }
@@ -109,7 +110,8 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
     print(counter)
     counter = counter +1
   }  
-  # change the value of the water level data
+  
+  # change the values of the DB category values into the original and "known" values
   WLIds = t.data$fld_05_00000066
   t.data$Streamlevel = unlist(sapply(WLIds, function(x) if(is.na(x)){return(x)}else{WL_LUT$WLInput[WL_LUT$WLID==x]}))  
   
@@ -124,7 +126,6 @@ Download_LatestCWdata_from_API = function(lastDate = '2016-01-01 14:30:00'){
   PPIds = t.data$fld_05_00000286
   t.data$PlasticPieces = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPInput[PP_LUT$PPID==x]}))  
   t.data$PPnr = unlist(sapply(PPIds, function(x) if(is.na(x)){return(x)}else{PP_LUT$PPnr[PP_LUT$PPID==x]}))  
-  
   
   return(t.data)
   # stop("all CW data updated")

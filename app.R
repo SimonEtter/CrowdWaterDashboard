@@ -9,7 +9,7 @@ library(V8)
 library(leaflet)
 library(leaflet.extras)
 library(htmltools)
-setwd('Z:/group/h2k-data/Projects/CrowdWater/Oeffentlichkeitsarbeit/Homepage/DataDashboard/CrowdWaterDashboard')
+# setwd('Z:/group/h2k-data/Projects/CrowdWater/Oeffentlichkeitsarbeit/Homepage/DataDashboard/CrowdWaterDashboard')
 source('./CW_API_Download.R')
 # icons: http://rstudio.github.io/shinydashboard/appearance.html
 # the javascript code to refresh the entire page.
@@ -54,7 +54,7 @@ ui <- dashboardPage(
                           ),
                           fluidPage(box(width = 12,title = "Leaflet Heatmap of CrowdWater spots",
                                         leafletOutput("heatmap_heatmap"))
-                                    )#,
+                          )#,
                           # --> rather useless (because this way its only global)
                           # fluidPage(box(width = 12,title = "Kernel Heatmap of CrowdWater spots",
                           #                           leafletOutput("heatmap_kernel")))
@@ -167,23 +167,23 @@ ui <- dashboardPage(
                   ),
                   tabItem(tabName = "sb_explore", # explore Tab----
                           fluidPage(
-                          box(width = 3,footer = tags$div(class = "submit",
-                                                          tags$a(href = "https://www.spotteron.com/crowdwater", 
-                                                                 "IDs can be found in the browser link of spots on the CrowdWater map.", 
-                                                                 target="_blank")
-                          ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "105679"), actionButton("expl_btn","Show me the Spot")),
-                          box(width = 6,leafletOutput("expl_spotMap")),
-                          valueBoxOutput(width = 3,"expl_contrPerDay"),p(),
-                          br(),
-                          box(width = 12, title = "Timeline of contributions",    
-                              plotOutput("expl_timelinePlot", height = "500px")),
-                          br(),
-                          # box(width=1,title = "Root Spot Number", textOutput("expl_statRootID")),
-                          
-                          box(width=12, title = "Image of this Spot", htmlOutput("expl_thisImg"),htmlOutput("expl_date_thisImg"),collapsible = T, collapsed = T),br(),
-                          box(widht=12, title = "Root Spot Image", htmlOutput("expl_rootImg"),htmlOutput("expl_date_rootImg"),collapsible = T, collapsed = T),br(),
-                          box(widht=12, title = "Latest Image", htmlOutput("expl_latestImg"),htmlOutput("expl_date_latestImg"),collapsible = T, collapsed = T)
-                  )),
+                            box(width = 3,footer = tags$div(class = "submit",
+                                                            tags$a(href = "https://www.spotteron.com/crowdwater", 
+                                                                   "IDs can be found in the browser link of spots on the CrowdWater map.", 
+                                                                   target="_blank")
+                            ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "105679"), actionButton("expl_btn","Show me the Spot")),
+                            box(width = 6,leafletOutput("expl_spotMap")),
+                            valueBoxOutput(width = 3,"expl_contrPerDay"),p(),
+                            br(),
+                            box(width = 12, title = "Timeline of contributions",    
+                                plotOutput("expl_timelinePlot", height = "500px")),
+                            br(),
+                            # box(width=1,title = "Root Spot Number", textOutput("expl_statRootID")),
+                            
+                            box(width=12, title = "Image of this Spot", htmlOutput("expl_thisImg"),htmlOutput("expl_date_thisImg"),collapsible = T, collapsed = T),br(),
+                            box(widht=12, title = "Root Spot Image", htmlOutput("expl_rootImg"),htmlOutput("expl_date_rootImg"),collapsible = T, collapsed = T),br(),
+                            box(widht=12, title = "Latest Image", htmlOutput("expl_latestImg"),htmlOutput("expl_date_latestImg"),collapsible = T, collapsed = T)
+                          )),
                   tabItem(tabName = "about",
                           fluidPage(
                             img(src='Logo_Crowdwater_pos.png', width = "240px"),
@@ -205,46 +205,95 @@ ui <- dashboardPage(
 server <- function(input, output,session) {
   # js$hidehead('none')    # would be to hide the header, but that also disables the sidebar controls, therefore not used
   
+  # this is for the button in the about page.
+  # refreshes the entire dataset, deletes the existing file and overwrites the entire thing
   locFile4Attempt = 'CW_Data.csv'
   observeEvent(input$reloadAllCWdata,{
     CWdataFull = Download_AllCWdata_from_API()
     colnames(CWdataFull)[1]='Spot_ID'
     write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
-    js$refresh()
+    js$refresh() 
   })
   
+  # path to store the used the dateseries from with the new dates appended
+  fp_oldDateSeries = "CWData/oldDateSeries"
   
   if(file.exists(paste0("CWdata/",locFile4Attempt))){
-    CWdataFull = read.csv(paste0("CWdata/",locFile4Attempt))
+    CWdataFull = read.csv(paste0("CWdata/",locFile4Attempt),stringsAsFactors = F)
     latestUpdate = CWdataFull$created_at[nrow(CWdataFull)]
     newCWdata = Download_LatestCWdata_from_API(lastDate = latestUpdate)
     if(!is.null(newCWdata)){
       colnames(newCWdata)[1]='Spot_ID'
+      CWdataFull$created_at = as.POSIXlt(CWdataFull$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
+      newCWdata$created_at = as.POSIXlt(newCWdata$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
       CWdataFull = rbind(CWdataFull,newCWdata)
-      write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
+      # write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
+      
+      newStartDate = as.POSIXlt(newCWdata$created_at[1])
+      newEndDate =  as.POSIXlt(newCWdata$created_at[nrow(newCWdata)])
+      newDateSeries = seq(from=newStartDate,to=newEndDate+3600,by='1 day')
+      attr(newDateSeries,"tzone") = 'GMT'
+    }else{
+      newDateSeries = NULL
+      print("here")
     }
   }else{
     CWdataFull = Download_AllCWdata_from_API()
     colnames(CWdataFull)[1]='Spot_ID'
+    CWdataFull$created_at = as.POSIXlt(CWdataFull$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
     write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
+    
+    # the start date is approximately when the app was officially launched, there are some pics from earlier dates that were added manually by us
+    dateSeries = seq(from=as.POSIXct("2017-01-01 01:00:00 GMT"),to=CWdataFull$created_at[nrow(CWdataFull)]+3600,by='1 day')
+    attr(dateSeries,"tzone") = 'GMT'
+    saveRDS(dateSeries,file=fp_oldDateSeries)
   }
   CWdata = CWdataFull # select all CW data 
+  CWdata$created_at = as.POSIXlt(CWdata$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
+  
+  cumSumsFile = paste0("CWData/cumSums")
+  
+  if (exists("newDateSeries")){
+    dateSeries = readRDS(fp_oldDateSeries)
+    dateSeries_newold = c(dateSeries,newDateSeries)
+    saveRDS(dateSeries_newold,fp_oldDateSeries)
+    
+    # all cumSums
+    newCumSumAll =  sapply(newDateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
+    oldCumSumAll = readRDS(cumSumsFile)
+    cumSums = c(oldCumSumAll,unlist(newCumSumAll))
+    saveRDS(cumSums,file = cumSumsFile)
+    
+    # cumSumUsers
+    newCumSumUsers = sapply(newDateSeries,function(x) length(unique(CWdata$spotted_by[CWdata$created_at<=x])))
+    oldCumSumUsers = readRDS("CWdata/cumSumUsers")
+    cumSumUsers = c(oldCumSumUsers,unlist(newCumSumUsers))
+    saveRDS(cumSumUsers,"CWdata/cumSumUsers")
+    
+    # continue putting all variables that could be save and restored for faster loading into this ifelse
+    
+    
+  }else{
+    # all cumSums
+    cumSums =  sapply(dateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
+    saveRDS(cumSums,file = cumSumsFile)
+    
+    # cumsums at dates and Root IDs with corresponding updates
+    cumSumUsers = sapply(dateSeries,function(x) length(unique(CWdata$spotted_by[CWdata$created_at<=x])))
+    saveRDS(cumSumUsers,"CWdata/cumSumUsers")
+    
+  }
   
   
   # Base data manipulations for dashboard ----
-  CWdata$created_at = as.POSIXlt(CWdata$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
   uq.dates = unique(CWdata$created_at)
   uq.roots = unique(CWdata$root_id)
   uq.users = unique(CWdata$spotted_by)
-  # the start date is approximately when the app was officially launched, there are some pics from earlier dates that were added manually by us
-  dateSeries = seq(from=min(as.POSIXct("2017-01-01 01:00:00 GMT")),to=max(uq.dates)+3600,by='1 day')
-  attr(dateSeries,"tzone") = 'GMT'
+
   
   
-  # cumsums at dates and Root IDs with corresponding updates
-  cumSums = sapply(dateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
-  cumSumUsers = sapply(dateSeries,function(x) length(unique(CWdata$spotted_by[CWdata$created_at<=x])))
-  
+ 
+
   # Monthly active users over the entire period----
   monthsAll = paste0(format(CWdata$created_at,'%Y'),'_',format(CWdata$created_at,'%m'))
   # create unique months from dateSeries, because there might be months wihtout contributions
@@ -636,7 +685,7 @@ server <- function(input, output,session) {
     output$expl_date_latestImg = renderText({
       shiny::validate(need(nrow(expl_spotData) > 0,message = ""))
       format(expl_spotData$created_at[length(expl_spotData$image)], "%d.%m.%Y %H:%M:%S")
-      })
+    })
     # contribution ever X day----
     nrContribs = nrow(expl_spotData)
     firstDay = expl_spotData$created_at[1]
@@ -647,12 +696,12 @@ server <- function(input, output,session) {
     output$expl_contrPerDay = renderValueBox({
       valueBox(
         formatC(round(CntrEverXDays,1),format="f",digits=1, big.mark=','),
-    paste('average days between contributions'),
-    icon = icon("hourglass-half",lib='font-awesome'),
-    color = "light-blue")
+        paste('average days between contributions'),
+        icon = icon("hourglass-half",lib='font-awesome'),
+        color = "light-blue")
     })
     
-  
+    
     # make chart of timeseries
     # water level	= 470 fld_05_00000066
     # soil moisture = 469 fld_05_00000052
