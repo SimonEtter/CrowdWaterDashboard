@@ -40,7 +40,6 @@ ui <- dashboardPage(
                 #                 }"),
                 tabItems(
                   tabItem(tabName="sb_stats",
-                          
                           fluidRow(
                             valueBoxOutput(width = 6,"TotnContribs") %>% withSpinner(color='#7dbdeb'),
                             valueBoxOutput(width = 6,"uqRootsSpots")),
@@ -55,7 +54,7 @@ ui <- dashboardPage(
                           fluidPage(box(width = 12,title = "Leaflet Heatmap of CrowdWater spots",
                                         leafletOutput("heatmap_heatmap"))
                           )#,
-                          # --> rather useless (because this way its only global)
+                          # --> useless (because this way its only global)
                           # fluidPage(box(width = 12,title = "Kernel Heatmap of CrowdWater spots",
                           #                           leafletOutput("heatmap_kernel")))
                   ),
@@ -173,7 +172,9 @@ ui <- dashboardPage(
                                                                    target="_blank")
                             ),title="Enter the ID of the Spot that you want to explore",textInput("stationID", "", "105679"), actionButton("expl_btn","Show me the Spot")),
                             box(width = 6,leafletOutput("expl_spotMap")),
-                            valueBoxOutput(width = 3,"expl_contrPerDay"),p(),
+                            valueBoxOutput(width=3, "expl_nrOfContribs"), br(),
+                            valueBoxOutput(width = 3,"expl_contrPerDay"),
+                            p(),
                             br(),
                             box(width = 12, title = "Timeline of contributions",    
                                 plotOutput("expl_timelinePlot", height = "500px")),
@@ -205,19 +206,24 @@ ui <- dashboardPage(
 server <- function(input, output,session) {
   # js$hidehead('none')    # would be to hide the header, but that also disables the sidebar controls, therefore not used
   
-  # this is for the button in the about page.
-  # refreshes the entire dataset, deletes the existing file and overwrites the entire thing
+  # Re-Download Data - button in the about page ----
+  # this is for the button in the about page:
+  # deletes and re-downloads the entire dataset
   locFile4Attempt = 'CW_Data.csv'
   observeEvent(input$reloadAllCWdata,{
     CWdataFull = Download_AllCWdata_from_API()
     colnames(CWdataFull)[1]='Spot_ID'
     write.csv(CWdataFull,file=paste0("CWdata/",locFile4Attempt),row.names = F)
-    js$refresh() 
+    js$refresh() # reloads the entire app with the new data
   })
+  ############################################################################################################
   
-  # path to store the used the dateseries from with the new dates appended
-  fp_oldDateSeries = "CWData/oldDateSeries"
+  # Determine what data needs to be downloaded----
+  # path to store the used the dateseries with the new dates appended
+  fp_oldDateSeries = "CWdata/oldDateSeries"
   
+  # if previous CrowdWater data exists then append the new contributions 
+  # else download all contributions again and store them as CW_Data.csv
   if(file.exists(paste0("CWdata/",locFile4Attempt))){
     CWdataFull = read.csv(paste0("CWdata/",locFile4Attempt),stringsAsFactors = F)
     latestUpdate = CWdataFull$created_at[nrow(CWdataFull)]
@@ -234,8 +240,9 @@ server <- function(input, output,session) {
       newDateSeries = seq(from=newStartDate,to=newEndDate+3600,by='1 day')
       attr(newDateSeries,"tzone") = 'GMT'
     }else{
+      # if there were no new contributions to be downloaded, then make the newDateSeries a NULL-variable
       newDateSeries = NULL
-      print("here")
+      print("no new contributions since the app was opened last")
     }
   }else{
     CWdataFull = Download_AllCWdata_from_API()
@@ -248,11 +255,26 @@ server <- function(input, output,session) {
     attr(dateSeries,"tzone") = 'GMT'
     saveRDS(dateSeries,file=fp_oldDateSeries)
   }
+  # Category datasets----
   CWdata = CWdataFull # select all CW data 
   CWdata$created_at = as.POSIXlt(CWdata$created_at,format = '%Y-%m-%d %H:%M:%S',tz='GMT',usetz=T)
+  CWdataTS = CWdata[CWdata$category==468,]
+  CWdataSM = CWdata[CWdata$category==469,]
+  CWdataPP = CWdata[CWdata$category==1919,]
+  CWdataWL = CWdata[CWdata$category==470,]
   
-  cumSumsFile = paste0("CWData/cumSums")
+  # Basic values needed for dashboard ----
+  uq.dates = unique(CWdata$created_at)
+  uq.roots = unique(CWdata$root_id)
+  uq.users = unique(CWdata$spotted_by)
   
+  # filpath to the data file for the previous cumulative sums
+  cumSumsFile = paste0("CWdata/cumSums")
+  
+  # if there are not yet downloaded contributions to the CrowdWater servers the variable "newDateSeries" will not exist
+  # therefore the code will jump to the else statement (and calculate the cumsums over the entire dataset which presumably takes longer)
+  # there might also be a good option to do that for the individual categories, but there it is more complicated
+  # because the dateseries need to be calculated from the entire and newly downloaded dataset
   if (exists("newDateSeries")){
     dateSeries = readRDS(fp_oldDateSeries)
     dateSeries_newold = c(dateSeries,newDateSeries)
@@ -270,9 +292,7 @@ server <- function(input, output,session) {
     cumSumUsers = c(oldCumSumUsers,unlist(newCumSumUsers))
     saveRDS(cumSumUsers,"CWdata/cumSumUsers")
     
-    # continue putting all variables that could be save and restored for faster loading into this ifelse
-    
-    
+    dateSeries = dateSeries_newold
   }else{
     # all cumSums
     cumSums =  sapply(dateSeries,function(x) length(CWdata$Spot_ID[CWdata$created_at<=x]))
@@ -281,18 +301,8 @@ server <- function(input, output,session) {
     # cumsums at dates and Root IDs with corresponding updates
     cumSumUsers = sapply(dateSeries,function(x) length(unique(CWdata$spotted_by[CWdata$created_at<=x])))
     saveRDS(cumSumUsers,"CWdata/cumSumUsers")
-    
   }
   
-  
-  # Base data manipulations for dashboard ----
-  uq.dates = unique(CWdata$created_at)
-  uq.roots = unique(CWdata$root_id)
-  uq.users = unique(CWdata$spotted_by)
-
-  
-  
- 
 
   # Monthly active users over the entire period----
   monthsAll = paste0(format(CWdata$created_at,'%Y'),'_',format(CWdata$created_at,'%m'))
@@ -309,8 +319,7 @@ server <- function(input, output,session) {
   maxcontribs = max(sapply(IdsPerRoot, function(x) length(x)))
   maxcontribUser = max(sapply(IdsPerUser, function(x) length(x)))
   
-  # for temporary streams
-  CWdataTS = CWdata[CWdata$category==468,]
+  # Temporary streams----
   IdsPerRootTS = sapply(uq.roots,function(x) CWdataTS$Spot_ID[CWdataTS$root_id==x])
   IdsPerUserTS = sapply(uq.users,function(x) CWdataTS$Spot_ID[CWdataTS$spotted_by==x])
   maxcontribsTS = max(sapply(IdsPerRootTS, function(x) length(x)))
@@ -321,12 +330,12 @@ server <- function(input, output,session) {
   cumSumsUsersTS = sapply(dateSeriesTS,function(x) length(unique(CWdataTS$spotted_by[CWdataTS$created_at<=x])))
   # Monthly active users
   monthsTS = paste0(format(CWdataTS$created_at,'%Y'),'_',format(CWdataTS$created_at,'%m'))
-  # create unique months from dateSeries, because there might be months wihtout contributions
+  # create unique months from dateSeries, because there might be months without contributions
   monthlyActiveUsersTS = sapply(uq.months,function(x){
     length(unique(CWdataTS$created_by[monthsTS==x]))
   })
-  # for soil moisture
-  CWdataSM = CWdata[CWdata$category==469,]
+  
+  # Soil moisture----
   IdsPerRootSM = sapply(uq.roots,function(x) CWdataSM$Spot_ID[CWdataSM$root_id==x])
   IdsPerUserSM = sapply(uq.users,function(x) CWdataSM$Spot_ID[CWdataSM$spotted_by==x])
   maxcontribsSM = max(sapply(IdsPerRootSM, function(x) length(x)))
@@ -342,8 +351,7 @@ server <- function(input, output,session) {
     length(unique(CWdataSM$created_by[monthsSM==x]))
   })
   
-  # for plastic pollution streams
-  CWdataPP = CWdata[CWdata$category==1919,]
+  # Plastic pollution----
   IdsPerRootPP = sapply(uq.roots,function(x) CWdataPP$Spot_ID[CWdataPP$root_id==x])
   IdsPerUserPP = sapply(uq.users,function(x) CWdataPP$Spot_ID[CWdataPP$spotted_by==x])
   maxcontribsPP = max(sapply(IdsPerRootPP, function(x) length(x)))
@@ -359,8 +367,7 @@ server <- function(input, output,session) {
     length(unique(CWdataPP$created_by[monthsPP==x]))
   })
   
-  # for water levels
-  CWdataWL = CWdata[CWdata$category==470,]
+  # Water levels----
   IdsPerRootWL = sapply(uq.roots,function(x) CWdataWL$Spot_ID[CWdataWL$root_id==x])
   IdsPerUserWL = sapply(uq.users,function(x) CWdataWL$Spot_ID[CWdataWL$spotted_by==x])
   maxcontribsWL = max(sapply(IdsPerRootWL, function(x) length(x)))
@@ -408,7 +415,7 @@ server <- function(input, output,session) {
   cumPlotUsersPP = cumplot(dateSeriesPP, cumSumsUsersPP,'Cumulative Contributors')
   output$cumsumplotUsersPP = renderPlot({cumPlotUsersPP})
   
-  # Plot with montly active users
+  # Plots with montly active users----
   MauPlotAll = mauPlot(monthlyActiveUsersAll)
   output$mauPlotAll = renderPlot({MauPlotAll})
   
@@ -693,6 +700,14 @@ server <- function(input, output,session) {
     duration = as.numeric(lastDay-firstDay)
     CntrEverXDays = 1/(nrContribs/duration)
     
+    output$expl_nrOfContribs = renderValueBox({
+      valueBox(
+        nrContribs,
+        paste('total number of contributions'),
+        icon = icon("signal",lib='font-awesome'),
+        color = "purple")
+    })
+    
     output$expl_contrPerDay = renderValueBox({
       valueBox(
         formatC(round(CntrEverXDays,1),format="f",digits=1, big.mark=','),
@@ -700,7 +715,6 @@ server <- function(input, output,session) {
         icon = icon("hourglass-half",lib='font-awesome'),
         color = "light-blue")
     })
-    
     
     # make chart of timeseries
     # water level	= 470 fld_05_00000066
